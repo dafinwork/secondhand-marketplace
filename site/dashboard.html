@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - SecondHand Marketplace</title>
+  <meta name="robots" content="noindex">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body data-nav="">
+  <div class="demo-bar no-print">
+    <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <span><i class="bi bi-info-circle"></i> Mode demo &mdash; ganti peran untuk melihat dashboard masing-masing. Data tersimpan di browser ini.</span>
+      <div class="d-flex gap-2" id="roleSwitch"></div>
+    </div>
+  </div>
+
+  <aside class="dashboard-sidebar no-print" id="dashSidebar">
+    <div class="sidebar-brand">
+      <a href="index.html" class="text-decoration-none text-dark"><i class="bi bi-recycle"></i> Second<span style="color:var(--primary)">Hand</span></a>
+    </div>
+    <div id="sideNav"></div>
+    <div class="sidebar-section-title mt-3">Lainnya</div>
+    <nav class="sidebar-nav nav flex-column px-2">
+      <div class="nav-item"><a class="nav-link" href="index.html"><i class="bi bi-house"></i> Ke Beranda</a></div>
+      <div class="nav-item"><a class="nav-link" href="products.html"><i class="bi bi-grid"></i> Katalog</a></div>
+      <div class="nav-item"><a class="nav-link text-danger" href="#" id="sideLogout"><i class="bi bi-box-arrow-right"></i> Logout</a></div>
+    </nav>
+  </aside>
+
+  <div class="dashboard-main">
+    <div class="dashboard-topbar no-print">
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-light d-lg-none" id="sidebarToggle" aria-label="Buka menu"><i class="bi bi-list"></i></button>
+        <h5 class="mb-0 fw-bold" id="dashTitle">Dashboard</h5>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <a class="btn btn-sm btn-outline-secondary" href="index.html"><i class="bi bi-eye"></i> Lihat Situs</a>
+        <span class="text-muted small d-none d-sm-inline" id="dashUser"></span>
+        <div class="avatar-circle" id="dashAvatar"></div>
+      </div>
+    </div>
+
+    <div class="p-4" id="dashBody"></div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    if (!requireLogin('dashboard.html')) {
+      // redirect
+    } else {
+      let user = getUser();
+      let tab = qs('t') || 'overview';
+
+      const MENUS = {
+        buyer: [
+          { id: 'overview', label: 'Dashboard', icon: 'bi-speedometer2' },
+          { id: 'orders', label: 'Pesanan Saya', icon: 'bi-bag' },
+          { id: 'wishlist', label: 'Wishlist', icon: 'bi-heart' },
+          { id: 'notifications', label: 'Notifikasi', icon: 'bi-bell' },
+          { id: 'profile', label: 'Profil Saya', icon: 'bi-person' },
+        ],
+        seller: [
+          { id: 'overview', label: 'Dashboard', icon: 'bi-speedometer2' },
+          { id: 'listings', label: 'Produk Saya', icon: 'bi-box-seam' },
+          { id: 'new-listing', label: 'Tambah Produk', icon: 'bi-plus-circle' },
+          { id: 'orders', label: 'Pesanan Masuk', icon: 'bi-receipt' },
+          { id: 'profile', label: 'Profil Toko', icon: 'bi-shop' },
+        ],
+        admin: [
+          { id: 'overview', label: 'Dashboard', icon: 'bi-speedometer2' },
+          { id: 'verify', label: 'Verifikasi Produk', icon: 'bi-patch-check' },
+          { id: 'products', label: 'Semua Produk', icon: 'bi-box-seam' },
+          { id: 'categories', label: 'Kategori', icon: 'bi-tags' },
+          { id: 'users', label: 'Pengguna', icon: 'bi-people' },
+          { id: 'orders', label: 'Semua Pesanan', icon: 'bi-receipt' },
+          { id: 'settings', label: 'Pengaturan', icon: 'bi-gear' },
+        ],
+      };
+
+      const TITLES = {
+        buyer: 'Dashboard Pembeli',
+        seller: 'Dashboard Seller',
+        admin: 'Panel Admin',
+      };
+
+      function renderRoleSwitch() {
+        document.getElementById('roleSwitch').innerHTML = DEMO_ACCOUNTS.map((a) =>
+          `<button class="btn ${a.role === user.role ? 'btn-light' : 'btn-outline-light'}" data-role="${a.role}" data-email="${a.email}">${a.label}</button>`).join('');
+        document.getElementById('roleSwitch').onclick = (e) => {
+          const b = e.target.closest('button[data-role]');
+          if (!b) return;
+          const u = Object.values(USERS).find((x) => x.email === b.dataset.email);
+          save(KEY.user, { ...u, loginAt: new Date().toISOString() });
+          user = u;
+          tab = 'overview';
+          render();
+          toast('Berpindah ke dashboard ' + b.dataset.role, 'info');
+        };
+      }
+
+      function renderSidebar() {
+        document.getElementById('sideNav').innerHTML =
+          `<div class="sidebar-section-title">Menu ${esc(user.role)}</div>
+           <nav class="sidebar-nav nav flex-column px-2">
+             ${MENUS[user.role].map((m) => `<div class="nav-item"><a class="nav-link ${tab === m.id ? 'active' : ''}" href="#" data-tab="${m.id}"><i class="bi ${m.icon}"></i> ${m.label}</a></div>`).join('')}
+           </nav>`;
+        document.querySelectorAll('#sideNav [data-tab]').forEach((a) =>
+          a.addEventListener('click', (e) => {
+            e.preventDefault();
+            tab = a.dataset.tab;
+            document.getElementById('dashSidebar').classList.remove('show');
+            render();
+          })
+        );
+      }
+
+      /* ---------- shared fragments ---------- */
+      function statCard(icon, tint, value, label) {
+        return `<div class="stat-card h-100"><div class="d-flex justify-content-between align-items-start">
+          <div class="feature-icon ${tint}"><i class="bi ${icon}"></i></div></div>
+          <div class="stat-value mt-3">${value}</div><div class="stat-label">${label}</div></div>`;
+      }
+
+      function statusBadge(status) {
+        const s = ORDER_STATUS[status];
+        return `<span class="badge bg-${s.badge}"><i class="bi ${s.icon}"></i> ${s.label}</span>`;
+      }
+
+      function ordersTable(orders, canAdvance) {
+        if (!orders.length) return `<div class="empty-state"><i class="bi bi-receipt"></i><h5>Belum ada pesanan</h5></div>`;
+        return `<div class="table-responsive table-custom bg-white rounded-3">
+          <table class="table align-middle mb-0">
+            <thead><tr><th>Invoice</th><th>Pembeli</th><th>Item</th><th>Total</th><th>Status</th><th class="text-end">Aksi</th></tr></thead>
+            <tbody>${orders.map((o) => {
+              const buyer = USERS[o.buyerId] || { name: 'Pembeli' };
+              return `<tr>
+                <td><div class="fw-semibold">${esc(o.invoice)}</div><small class="text-muted">${esc(o.createdAt)}</small></td>
+                <td>${esc(buyer.name)}</td>
+                <td>${o.items.map((i) => {
+                  const p = getProductById(i.productId);
+                  return `<div class="small">${i.qty}x ${esc(p?.name || 'Produk')}</div>`;
+                }).join('')}</td>
+                <td class="fw-semibold">${fmt(o.total)}</td>
+                <td>${statusBadge(o.status)}<br><small class="text-muted">${o.tracking ? esc(o.tracking) : 'Belum ada resi'}</small></td>
+                <td class="text-end">
+                  <a class="btn btn-sm btn-outline-secondary" href="tracking.html?o=${o.id}">Detail</a>
+                  ${canAdvance ? nextAction(o) : ''}
+                </td></tr>`;
+            }).join('')}</tbody>
+          </table></div>`;
+      }
+
+      function nextAction(o) {
+        const nextMap = { pending: 'confirmed', confirmed: 'processing', processing: 'shipped', shipped: 'delivered' };
+        const next = nextMap[o.status];
+        if (!next) return '';
+        return `<button class="btn btn-sm btn-primary ms-1" data-advance="${o.id}" data-to="${next}">${ORDER_STATUS[next].label}</button>`;
+      }
+
+      function bindAdvance(root) {
+        root.querySelectorAll('[data-advance]').forEach((b) =>
+          b.addEventListener('click', () => {
+            advanceOrder(b.dataset.advance, b.dataset.to);
+            toast('Status pesanan diubah ke ' + ORDER_STATUS[b.dataset.to].label, 'success');
+            render();
+          })
+        );
+      }
+
+      /* ---------- panels ---------- */
+      function panelOverview() {
+        const products = allProducts();
+        const orders = getOrders();
+
+        if (user.role === 'buyer') {
+          const spend = orders.reduce((s, o) => s + o.total, 0);
+          return `<div class="row g-3 mb-4">
+            ${statCard('bi-bag-check', '', orders.length, 'Total Pesanan')}
+            ${statCard('bi-wallet2', 'bg-tint-success', fmt(spend), 'Total Belanja')}
+            ${statCard('bi-heart', 'bg-tint-warning', getWishlist().length, 'Item Wishlist')}
+            ${statCard('bi-box-seam', 'bg-tint-dark', cartCount(), 'Item di Keranjang')}
+          </div>
+          <div class="stat-card mb-4"><h6 class="fw-bold text-dark mb-3">Pesanan Terbaru</h6>${ordersTable(orders.slice(0, 4), false)}</div>
+          <div class="section-header"><h2 style="font-size:1.3rem">Rekomendasi Untukmu</h2><div class="section-divider"></div></div>
+          <div class="row g-3" id="recGrid"></div>`;
+        }
+
+        if (user.role === 'seller') {
+          const mine = products.filter((p) => p.sellerId === user.id);
+          const sOrders = orders.filter((o) => o.items.some((i) => i.sellerId === user.id));
+          const revenue = sOrders.reduce((s, o) => s + o.items.filter((i) => i.sellerId === user.id).reduce((x, i) => x + i.subtotal, 0), 0);
+          const pendingVerify = mine.filter((p) => p.verification === 'pending').length;
+          return `<div class="row g-3 mb-4">
+            ${statCard('bi-box-seam', '', mine.length, 'Produk Terdaftar')}
+            ${statCard('bi-cash-coin', 'bg-tint-success', fmt(revenue), 'Total Pendapatan')}
+            ${statCard('bi-receipt', 'bg-tint-warning', sOrders.length, 'Pesanan Masuk')}
+            ${statCard('bi-hourglass-split', 'bg-tint-dark', pendingVerify, 'Menunggu Verifikasi')}
+          </div>
+          ${pendingVerify ? `<div class="alert alert-warning d-flex gap-2"><i class="bi bi-hourglass-split"></i>
+            <div><strong>${pendingVerify} produk menunggu verifikasi admin.</strong> Produk baru tidak tampil di katalog publik sampai disetujui.</div></div>` : ''}
+          <div class="stat-card mb-4"><h6 class="fw-bold text-dark mb-3">Pesanan Terbaru</h6>${ordersTable(sOrders.slice(0, 5), true)}</div>
+          <div class="section-header"><h2 style="font-size:1.3rem">Performa Produk Teratas</h2><div class="section-divider"></div></div>
+          <div class="row g-3" id="recGrid"></div>`;
+        }
+
+        const revenue = orders.reduce((s, o) => s + o.total, 0);
+        const pending = products.filter((p) => p.verification === 'pending').length;
+        const pendingPay = orders.filter((o) => o.paymentStatus === 'pending').length;
+        return `<div class="row g-3 mb-4">
+          ${statCard('bi-people', '', Object.keys(USERS).length, 'Total Pengguna')}
+          ${statCard('bi-box-seam', 'bg-tint-success', products.length, 'Total Produk')}
+          ${statCard('bi-patch-check', 'bg-tint-warning', pending, 'Perlu Verifikasi')}
+          ${statCard('bi-cash-stack', 'bg-tint-dark', fmt(revenue), 'Total GMV')}
+        </div>
+        <div class="alert alert-warning d-flex gap-2 justify-content-between align-items-center flex-wrap mb-4">
+          <div><i class="bi bi-patch-check"></i> <strong>${pending} produk</strong> menunggu verifikasi, <strong>${pendingPay} pembayaran</strong> menunggu verifikasi.</div>
+          <button class="btn btn-sm btn-primary" data-goto="verify">Buka Antrean Verifikasi</button>
+        </div>
+        <div class="row g-4">
+          <div class="col-lg-7"><div class="stat-card"><h6 class="fw-bold text-dark mb-3">Pesanan Terbaru</h6>${ordersTable(orders.slice(0, 6), true)}</div></div>
+          <div class="col-lg-5"><div class="stat-card"><h6 class="fw-bold text-dark mb-3">Distribusi Kategori</h6>${categoryBars()}</div></div>
+        </div>`;
+      }
+
+      function categoryBars() {
+        const products = allProducts();
+        const max = Math.max(...CATEGORIES.map((c) => products.filter((p) => p.categoryId === c.id).length));
+        return CATEGORIES.map((c) => {
+          const n = products.filter((p) => p.categoryId === c.id).length;
+          return `<div class="mb-2">
+            <div class="d-flex justify-content-between small mb-1"><span><i class="bi ${c.icon}"></i> ${c.name}</span><strong>${n}</strong></div>
+            <div class="progress" style="height:6px"><div class="progress-bar" style="width:${(n / max) * 100}%"></div></div>
+          </div>`;
+        }).join('');
+      }
+
+      function panelOrders() {
+        const orders = getOrders();
+        const canAdvance = user.role !== 'buyer';
+        return `<div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
+            <h6 class="fw-bold text-dark mb-0">${orders.length} pesanan</h6>
+            <a class="btn btn-sm btn-outline-secondary" href="orders.html">Buka halaman pesanan</a>
+          </div>` + ordersTable(orders, canAdvance);
+      }
+
+      function panelWishlist() {
+        return '<div class="row g-3" id="wlGrid"></div>';
+      }
+
+      function panelNotifications() {
+        const list = getNotifications();
+        if (!list.length) return `<div class="empty-state"><i class="bi bi-bell"></i><h5>Tidak ada notifikasi</h5></div>`;
+        return list.map((n) => `<div class="stat-card mb-2 d-flex gap-3 ${n.read ? '' : 'border-start border-4 border-primary'}">
+          <div class="feature-icon"><i class="bi bi-bell"></i></div>
+          <div><div class="fw-semibold text-dark">${esc(n.title)}</div>
+          <div class="small text-muted">${esc(n.message)}</div>
+          <div class="small text-muted mt-1">${esc(n.createdAt)} &middot; <span class="text-capitalize">${esc(n.type)}</span></div></div>
+        </div>`).join('');
+      }
+
+      function panelProfile() {
+        return `<div class="row g-4">
+          <div class="col-lg-5"><div class="stat-card text-center">
+            <div class="avatar-circle avatar-lg mx-auto mb-3" style="width:80px;height:80px;font-size:2rem">${esc(user.name.charAt(0))}</div>
+            <h5 class="fw-bold text-dark mb-0">${esc(user.name)}</h5>
+            <div class="text-muted small">${esc(user.email)}</div>
+            <span class="badge bg-primary mt-2 text-uppercase">${esc(user.role)}</span>
+            <hr>
+            <div class="small text-muted mb-3" style="text-align:left">Perubahan di halaman demo ini hanya tersimpan di browser kamu.</div>
+            <button class="btn btn-outline-danger w-100" id="profLogout"><i class="bi bi-box-arrow-right"></i> Logout</button>
+          </div></div>
+          <div class="col-lg-7"><form class="stat-card" id="profForm">
+            <h6 class="fw-bold text-dark mb-3">Ubah Data Akun</h6>
+            <div class="row g-3">
+              <div class="col-12"><label class="form-label small fw-semibold">Nama</label>
+                <input class="form-control" id="pName" value="${esc(user.name)}"></div>
+              <div class="col-md-6"><label class="form-label small fw-semibold">Email</label>
+                <input class="form-control" id="pEmail" value="${esc(user.email)}"></div>
+              <div class="col-md-6"><label class="form-label small fw-semibold">Telepon</label>
+                <input class="form-control" id="pPhone" value="${esc(user.phone || '')}"></div>
+              <div class="col-12"><label class="form-label small fw-semibold">Alamat</label>
+                <textarea class="form-control" id="pAddr" rows="2">${esc(user.address || '')}</textarea></div>
+              <div class="col-12"><button class="btn btn-primary-custom" type="submit">Simpan Perubahan</button></div>
+            </div>
+          </form></div>
+        </div>`;
+      }
+
+      function panelListings() {
+        const mine = allProducts().filter((p) => p.sellerId === user.id);
+        return `<div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-dark mb-0">${mine.length} produk</h6>
+            <button class="btn btn-sm btn-primary-custom" data-goto="new-listing"><i class="bi bi-plus-lg"></i> Tambah Produk</button>
+          </div>
+          <div class="table-responsive table-custom bg-white rounded-3">
+            <table class="table align-middle mb-0">
+              <thead><tr><th>Produk</th><th>Kategori</th><th>Harga</th><th>Stok</th><th>Status</th><th class="text-end">Aksi</th></tr></thead>
+              <tbody>${mine.map((p) => `<tr>
+                <td><div class="d-flex align-items-center gap-2">
+                  <img src="assets/img/products/${p.image}" alt="" width="44" height="44" style="width:44px;height:44px;object-fit:cover;border-radius:8px">
+                  <div><a href="product.html?p=${p.slug}" class="fw-semibold text-dark text-decoration-none d-block">${esc(p.name)}</a>
+                    <small class="text-muted">${p.views} dilihat &middot; ${p.rating ? p.rating.toFixed(1) : 'baru'}</small></div></div></td>
+                <td class="small">${esc(getCategory(p.categoryId)?.name)}</td>
+                <td class="fw-semibold">${fmt(p.price)}</td>
+                <td>${p.stock}</td>
+                <td>${p.verification === 'approved'
+                  ? '<span class="badge bg-success">Disetujui</span>'
+                  : '<span class="badge bg-warning">Menunggu</span>'}</td>
+                <td class="text-end">
+                  <a class="btn btn-sm btn-outline-secondary" href="product.html?p=${p.slug}">Lihat</a>
+                  <button class="btn btn-sm btn-outline-danger ms-1" data-del="${p.id}">Hapus</button>
+                </td></tr>`).join('')}</tbody>
+            </table></div>`;
+      }
+
+      function panelNewListing() {
+        return `<div class="row g-4">
+          <div class="col-lg-8"><form class="stat-card" id="listingForm">
+            <h6 class="fw-bold text-dark mb-3">Informasi Produk</h6>
+            <div class="row g-3">
+              <div class="col-12"><label class="form-label small fw-semibold">Nama Produk</label>
+                <input class="form-control" id="lName" required placeholder="mis. iPhone 13 Pro 256GB Bekas"></div>
+              <div class="col-md-6"><label class="form-label small fw-semibold">Kategori</label>
+                <select class="form-select" id="lCat">${CATEGORIES.map((c) => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+              <div class="col-md-6"><label class="form-label small fw-semibold">Kondisi</label>
+                <select class="form-select" id="lCond">
+                  <option value="like_new">Like New</option><option value="good" selected>Good</option><option value="fair">Fair</option></select></div>
+              <div class="col-md-4"><label class="form-label small fw-semibold">Harga (Rp)</label>
+                <input class="form-control" id="lPrice" type="number" min="1000" required placeholder="8500000"></div>
+              <div class="col-md-4"><label class="form-label small fw-semibold">Harga Normal (Rp)</label>
+                <input class="form-control" id="lOriginal" type="number" min="0" placeholder="14999000"></div>
+              <div class="col-md-4"><label class="form-label small fw-semibold">Stok</label>
+                <input class="form-control" id="lStock" type="number" min="1" value="1"></div>
+              <div class="col-md-4"><label class="form-label small fw-semibold">Berat (gram)</label>
+                <input class="form-control" id="lWeight" type="number" min="1" value="1000"></div>
+              <div class="col-md-8"><label class="form-label small fw-semibold">Foto Produk</label>
+                <input class="form-control" id="lImage" type="file" accept="image/*">
+                <div class="form-text">Pada demo, foto diunggah ke galeri bawaan sesuai kategori.</div></div>
+              <div class="col-12"><label class="form-label small fw-semibold">Deskripsi</label>
+                <textarea class="form-control" id="lDesc" rows="4" required placeholder="Jelaskan kondisi, kelengkapan, dan alasan dijual"></textarea></div>
+            </div>
+            <button class="btn btn-primary-custom mt-4" type="submit"><i class="bi bi-cloud-arrow-up"></i> Kirim untuk Verifikasi</button>
+          </form></div>
+          <div class="col-lg-4"><div class="stat-card">
+            <h6 class="fw-bold text-dark mb-3">Syarat Verifikasi</h6>
+            <ul class="small text-muted ps-3">
+              <li class="mb-2">Foto jelas dan sesuai nama produk.</li>
+              <li class="mb-2">Deskripsi jujur, sertakan cacat jika ada.</li>
+              <li class="mb-2">Harga wajar terhadap kondisi barang.</li>
+              <li class="mb-2">Nominal harga bukan aftermarket palsu.</li>
+            </ul>
+            <div class="alert alert-info small mb-0"><i class="bi bi-info-circle"></i> Produk baru berstatus <em>pending</em> dan hanya terlihat di dashboard seller sampai disetujui admin.</div>
+          </div></div>
+        </div>`;
+      }
+
+      function panelVerify() {
+        const pending = allProducts().filter((p) => p.verification === 'pending');
+        return `<div class="stat-card mb-4">
+            <h6 class="fw-bold text-dark mb-3">Antrean Verifikasi Produk</h6>
+            ${pending.length ? `<div class="table-responsive"><table class="table align-middle">
+              <thead><tr><th>Produk</th><th>Seller</th><th>Harga</th><th>Diajukan</th><th class="text-end">Keputusan</th></tr></thead>
+              <tbody>${pending.map((p) => `<tr>
+                <td><div class="d-flex align-items-center gap-2">
+                  <img src="assets/img/products/${p.image}" alt="" width="44" height="44" style="width:44px;height:44px;object-fit:cover;border-radius:8px">
+                  <div><div class="fw-semibold">${esc(p.name)}</div><small class="text-muted">${esc(p.description.slice(0, 70))}...</small></div></div></td>
+                <td class="small">${esc(SELLERS[p.sellerId]?.name || '-')}</td>
+                <td class="fw-semibold">${fmt(p.price)}</td>
+                <td class="small text-muted">${fmtDate(p.createdAt)}</td>
+                <td class="text-end">
+                  <button class="btn btn-sm btn-success" data-verify="${p.id}" data-to="approved"><i class="bi bi-check-lg"></i> Setujui</button>
+                  <button class="btn btn-sm btn-outline-danger" data-verify="${p.id}" data-to="rejected">Tolak</button>
+                </td></tr>`).join('')}</tbody></table></div>`
+              : '<div class="empty-state py-3"><i class="bi bi-check2-all text-success"></i><h6>Antrean kosong</h6><p class="mb-0">Semua produk sudah diverifikasi.</p></div>'}
+          </div>`;
+      }
+
+      function panelProducts() {
+        const products = allProducts();
+        return `<div class="stat-card"><h6 class="fw-bold text-dark mb-3">${products.length} produk terdaftar</h6>
+          <div class="table-responsive"><table class="table align-middle">
+            <thead><tr><th>Produk</th><th>Kategori</th><th>Seller</th><th>Harga</th><th>Stok</th><th>Status</th></tr></thead>
+            <tbody>${products.map((p) => `<tr>
+              <td><a href="product.html?p=${p.slug}" class="text-decoration-none text-dark fw-semibold">${esc(p.name)}</a></td>
+              <td class="small">${esc(getCategory(p.categoryId)?.name)}</td>
+              <td class="small">${esc(SELLERS[p.sellerId]?.name || '-')}</td>
+              <td class="fw-semibold">${fmt(p.price)}</td>
+              <td>${p.stock}</td>
+              <td>${p.verification === 'approved' ? '<span class="badge bg-success">Disetujui</span>' : '<span class="badge bg-warning">Pending</span>'}</td>
+            </tr>`).join('')}</tbody></table></div></div>`;
+      }
+
+      function panelCategories() {
+        return `<div class="row g-4">
+          <div class="col-lg-7"><div class="stat-card"><h6 class="fw-bold text-dark mb-3">Kategori Aktif</h6>
+            <ul class="list-unstyled mb-0">${CATEGORIES.map((c) => `<li class="d-flex justify-content-between align-items-center py-2 border-bottom">
+              <span><i class="bi ${c.icon} text-primary"></i> <strong>${c.name}</strong><br><small class="text-muted">${esc(c.description)}</small></span>
+              <span class="badge bg-light text-dark border">${allProducts().filter((p) => p.categoryId === c.id).length} produk</span></li>`).join('')}</ul>
+          </div></div>
+          <div class="col-lg-5"><form class="stat-card" id="catForm">
+            <h6 class="fw-bold text-dark mb-3">Tambah Kategori</h6>
+            <div class="mb-3"><label class="form-label small fw-semibold">Nama</label><input class="form-control" id="cName" required></div>
+            <div class="mb-3"><label class="form-label small fw-semibold">Slug</label><input class="form-control" id="cSlug" placeholder="otomatis dari nama"></div>
+            <div class="mb-3"><label class="form-label small fw-semibold">Deskripsi</label><textarea class="form-control" id="cDesc" rows="2"></textarea></div>
+            <button class="btn btn-primary-custom w-100" type="submit">Simpan Kategori</button>
+            <div class="form-text">Pada demo statis, kategori baru hanya disimpan di browser ini.</div>
+          </form></div>
+        </div>`;
+      }
+
+      function panelUsers() {
+        const users = Object.values(USERS);
+        return `<div class="stat-card"><h6 class="fw-bold text-dark mb-3">${users.length} pengguna terdaftar</h6>
+          <div class="table-responsive"><table class="table align-middle">
+            <thead><tr><th>Pengguna</th><th>Email</th><th>Telepon</th><th>Peran</th><th>Status</th><th class="text-end">Aksi</th></tr></thead>
+            <tbody>${users.map((u) => `<tr>
+              <td><div class="d-flex align-items-center gap-2"><div class="avatar-circle avatar-sm">${esc(u.name.charAt(0))}</div>
+                <span class="fw-semibold">${esc(u.name)}</span></div></td>
+              <td class="small">${esc(u.email)}</td>
+              <td class="small">${esc(u.phone || '-')}</td>
+              <td><span class="badge bg-${u.role === 'admin' ? 'danger' : u.role === 'seller' ? 'primary' : 'secondary'} text-uppercase">${u.role}</span></td>
+              <td>${u.active ? '<span class="badge bg-success">Aktif</span>' : '<span class="badge bg-secondary">Nonaktif</span>'}</td>
+              <td class="text-end"><button class="btn btn-sm ${u.active ? 'btn-outline-danger' : 'btn-outline-success'}" data-toggle="${u.id}">${u.active ? 'Nonaktifkan' : 'Aktifkan'}</button></td>
+            </tr>`).join('')}</tbody></table></div>
+          <div class="form-text mt-2">Pada versi PHP, aksi pengguna menandai kolom <code>users.is_active</code>.</div>
+        </div>`;
+      }
+
+      function panelSettings() {
+        const s = load(KEY.settings, { siteName: 'SecondHand Marketplace', minOrder: 5000000, verifyRequired: true });
+        return `<div class="row g-4">
+          <div class="col-lg-7"><form class="stat-card" id="setForm">
+            <h6 class="fw-bold text-dark mb-3">Pengaturan Marketplace</h6>
+            <div class="mb-3"><label class="form-label small fw-semibold">Nama Situs</label><input class="form-control" id="sName" value="${esc(s.siteName)}"></div>
+            <div class="mb-3"><label class="form-label small fw-semibold">Minimum Gratis Ongkir (Rp)</label><input class="form-control" id="sMin" type="number" value="${s.minOrder}"></div>
+            <div class="form-check form-switch mb-4">
+              <input class="form-check-input" type="checkbox" id="sVerify" ${s.verifyRequired ? 'checked' : ''}>
+              <label class="form-check-label" for="sVerify">Wajibkan verifikasi admin sebelum produk tayang</label>
+            </div>
+            <button class="btn btn-primary-custom" type="submit">Simpan Pengaturan</button>
+          </form></div>
+          <div class="col-lg-5"><div class="stat-card">
+            <h6 class="fw-bold text-dark mb-3">Tentang Versi Demo</h6>
+            <p class="small text-muted">Situs ini adalah versi statis dari aplikasi <strong>SecondHand Marketplace</strong> yang sebelumnya dibangun dengan PHP dan MySQL.</p>
+            <ul class="small text-muted ps-3">
+              <li>Tanpa server: semua data disimpan di <code>localStorage</code> browser.</li>
+              <li>Sumber PHP asli tetap tersedia di folder <code>src/</code> pada repository.</li>
+              <li>Skema database ada di <code>database/database.sql</code>.</li>
+            </ul>
+            <a class="btn btn-sm btn-outline-secondary" href="how-it-works.html">Pelajari cara kerja sistem</a>
+          </div></div>
+        </div>`;
+      }
+
+      const PANELS = {
+        overview: panelOverview,
+        orders: panelOrders,
+        wishlist: panelWishlist,
+        notifications: panelNotifications,
+        profile: panelProfile,
+        listings: panelListings,
+        'new-listing': panelNewListing,
+        verify: panelVerify,
+        products: panelProducts,
+        categories: panelCategories,
+        users: panelUsers,
+        settings: panelSettings,
+      };
+
+      function render() {
+        user = getUser();
+        renderRoleSwitch();
+        renderSidebar();
+        document.getElementById('dashTitle').textContent = TITLES[user.role];
+        document.getElementById('dashUser').textContent = user.name;
+        document.getElementById('dashAvatar').textContent = user.name.charAt(0).toUpperCase();
+
+        const allowed = MENUS[user.role].map((m) => m.id);
+        if (!allowed.includes(tab)) tab = 'overview';
+
+        const body = document.getElementById('dashBody');
+        body.innerHTML = `<div class="dash-panel">${PANELS[tab]()}</div>`;
+
+        /* post-render bindings */
+        bindAdvance(body);
+        bindPanels(body);
+
+        if (tab === 'wishlist') {
+          const list = getWishlist().map(getProductById).filter(Boolean);
+          const grid = document.getElementById('wlGrid');
+          if (list.length) renderProducts(grid, list);
+          else grid.innerHTML = `<div class="col-12"><div class="empty-state border rounded-3 bg-white">
+            <i class="bi bi-heart"></i><h5>Wishlist kosong</h5>
+            <a class="btn btn-primary-custom" href="products.html">Jelajahi Produk</a></div></div>`;
+        }
+        if (tab === 'overview') {
+          const grid = document.getElementById('recGrid');
+          if (grid) {
+            const list = user.role === 'buyer'
+              ? allProducts().filter((p) => p.verification === 'approved').sort((a, b) => b.views - a.views).slice(0, 4)
+              : allProducts().filter((p) => p.sellerId === user.id).sort((a, b) => b.views - a.views).slice(0, 4);
+            renderProducts(grid, list.length ? list : allProducts().slice(0, 4));
+          }
+        }
+
+        history.replaceState(null, '', 'dashboard.html?t=' + tab);
+      }
+
+      function bindPanels(body) {
+        /* navigate via data-goto */
+        body.querySelectorAll('[data-goto]').forEach((b) =>
+          b.addEventListener('click', () => { tab = b.dataset.goto; render(); })
+        );
+
+        /* verify queue */
+        body.querySelectorAll('[data-verify]').forEach((b) =>
+          b.addEventListener('click', () => {
+            const listings = load(KEY.listings, []);
+            const p = listings.find((x) => x.id === Number(b.dataset.verify));
+            if (p) {
+              p.verification = b.dataset.to;
+              save(KEY.listings, listings);
+              toast('Produk ' + (b.dataset.to === 'approved' ? 'disetujui' : 'ditolak'), b.dataset.to === 'approved' ? 'success' : 'warning');
+            } else {
+              toast('Verifikasi ini sudah tercatat di seed data (mode baca saja).', 'secondary');
+            }
+            render();
+          })
+        );
+
+        /* seller listing actions */
+        body.querySelectorAll('[data-del]').forEach((b) =>
+          b.addEventListener('click', () => {
+            const listings = load(KEY.listings, []).filter((x) => x.id !== Number(b.dataset.del));
+            save(KEY.listings, listings);
+            toast('Produk dihapus dari daftar demo', 'secondary');
+            render();
+          })
+        );
+
+        /* new listing form */
+        const lf = document.getElementById('listingForm');
+        if (lf) {
+          lf.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('lName').value.trim();
+            const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            const listings = load(KEY.listings, []);
+            const catId = Number(document.getElementById('lCat').value);
+            const sample = allProducts().find((p) => p.categoryId === catId) || allProducts()[0];
+            listings.unshift({
+              id: Date.now(),
+              sellerId: user.id,
+              categoryId: catId,
+              name,
+              slug,
+              description: document.getElementById('lDesc').value.trim(),
+              price: Number(document.getElementById('lPrice').value),
+              originalPrice: Number(document.getElementById('lOriginal').value) || null,
+              stock: Number(document.getElementById('lStock').value),
+              condition: document.getElementById('lCond').value,
+              weight: Number(document.getElementById('lWeight').value),
+              image: sample ? sample.image : 'no-image.svg',
+              verification: 'pending',
+              views: 0,
+              rating: 0,
+              reviewCount: 0,
+              createdAt: new Date().toISOString().slice(0, 10),
+            });
+            save(KEY.listings, listings);
+            toast('Produk dikirim, menunggu verifikasi admin', 'success');
+            tab = 'listings';
+            render();
+          });
+        }
+
+        /* profile form */
+        const pf = document.getElementById('profForm');
+        if (pf) {
+          pf.addEventListener('submit', (e) => {
+            e.preventDefault();
+            user.name = document.getElementById('pName').value.trim();
+            user.email = document.getElementById('pEmail').value.trim();
+            user.phone = document.getElementById('pPhone').value.trim();
+            user.address = document.getElementById('pAddr').value.trim();
+            save(KEY.user, user);
+            toast('Profil diperbarui', 'success');
+            render();
+          });
+        }
+
+        /* logout buttons */
+        body.querySelectorAll('#profLogout').forEach((b) => b.addEventListener('click', () => {
+          localStorage.removeItem(KEY.user);
+          location.href = 'index.html';
+        }));
+
+        /* settings form */
+        const sf = document.getElementById('setForm');
+        if (sf) {
+          sf.addEventListener('submit', (e) => {
+            e.preventDefault();
+            save(KEY.settings, {
+              siteName: document.getElementById('sName').value.trim(),
+              minOrder: Number(document.getElementById('sMin').value),
+              verifyRequired: document.getElementById('sVerify').checked,
+            });
+            toast('Pengaturan disimpan', 'success');
+          });
+        }
+
+        /* category form */
+        const cf = document.getElementById('catForm');
+        if (cf) {
+          document.getElementById('cSlug').value = '';
+          cf.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('cName').value.trim();
+            const slug = (document.getElementById('cSlug').value.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+            if (CATEGORIES.some((c) => c.slug === slug)) {
+              toast('Slug kategori sudah dipakai', 'danger');
+              return;
+            }
+            toast('Kategori "' + name + '" disimpan di browser (mode demo).', 'info');
+            cf.reset();
+          });
+        }
+
+        /* user activation */
+        body.querySelectorAll('[data-toggle]').forEach((b) =>
+          b.addEventListener('click', () => toast('Perubahan status pengguna hanya tersedia di versi PHP.', 'secondary'))
+        );
+      }
+
+      document.getElementById('sidebarToggle').addEventListener('click', () =>
+        document.getElementById('dashSidebar').classList.toggle('show'));
+      document.getElementById('sideLogout').addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem(KEY.user);
+        location.href = 'index.html';
+      });
+
+      render();
+    }
+  </script>
+</body>
+</html>

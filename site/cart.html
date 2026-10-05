@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keranjang Belanja - SecondHand Marketplace</title>
+  <meta name="robots" content="noindex">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body data-nav="">
+  <div id="siteNav"></div>
+
+  <section class="page-band">
+    <div class="container">
+      <h1>Keranjang Belanja</h1>
+      <p id="cartSubtitle">Periksa kembali barang yang akan kamu beli.</p>
+    </div>
+  </section>
+
+  <main class="py-5">
+    <div class="container">
+      <div class="row g-4" id="cartRow">
+        <div class="col-lg-8" id="cartItems"></div>
+        <div class="col-lg-4" id="cartSummary"></div>
+      </div>
+    </div>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    let shipping = 'reguler';
+
+    function render() {
+      if (!requireLogin('cart.html')) return;
+      const items = cartDetail();
+      const box = document.getElementById('cartItems');
+      const sum = document.getElementById('cartSummary');
+
+      if (!items.length) {
+        box.innerHTML = `<div class="empty-state border rounded-3 bg-white">
+          <i class="bi bi-cart-x"></i>
+          <h5>Keranjang masih kosong</h5>
+          <p>Yuk temukan barang bekas berkualitas di katalog kami.</p>
+          <a class="btn btn-primary-custom" href="products.html">Mulai Belanja</a></div>`;
+        sum.innerHTML = '';
+        document.getElementById('cartSubtitle').textContent = 'Belum ada barang di keranjang.';
+        paintCartBadge();
+        return;
+      }
+
+      const subtotal = cartSubtotal();
+      const ship = SHIPPING_METHODS.find((s) => s.id === shipping);
+      const cost = subtotal >= 5000000 ? 0 : ship.cost;
+
+      box.innerHTML = items.map((i) => `
+        <div class="stat-card mb-3 d-flex gap-3 align-items-start">
+          <img src="assets/img/products/${i.product.image}" alt="${esc(i.product.name)}" width="96" height="96"
+               style="width:96px;height:96px;object-fit:cover;border-radius:var(--radius-sm);flex-shrink:0">
+          <div class="flex-grow-1">
+            <div class="d-flex justify-content-between gap-2">
+              <a href="product.html?p=${i.product.slug}" class="fw-semibold text-dark text-decoration-none">${esc(i.product.name)}</a>
+              <button class="btn btn-sm text-danger" data-remove="${i.productId}" aria-label="Hapus"><i class="bi bi-trash"></i></button>
+            </div>
+            <div class="small text-muted mb-2">${esc(getCategory(i.product.categoryId)?.name)} &middot; ${CONDITION_LABELS[i.product.condition].label}</div>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div class="qty-control">
+                <button data-dec="${i.productId}" aria-label="Kurangi">−</button>
+                <span>${i.qty}</span>
+                <button data-inc="${i.productId}" aria-label="Tambah">+</button>
+              </div>
+              <div class="text-end">
+                <div class="fw-bold text-primary">${fmt(i.subtotal)}</div>
+                ${i.qty > 1 ? `<div class="small text-muted">${fmt(i.product.price)} / item</div>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>`).join('') +
+        `<a href="products.html" class="btn btn-link text-decoration-none px-0"><i class="bi bi-arrow-left"></i> Lanjut belanja lagi</a>`;
+
+      sum.innerHTML = `<div class="summary-card">
+        <h5 class="fw-bold text-dark mb-3">Ringkasan Belanja</h5>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-muted" for="ship">Metode Pengiriman</label>
+          <select class="form-select form-select-sm" id="ship">
+            ${SHIPPING_METHODS.map((s) => `<option value="${s.id}" ${s.id === shipping ? 'selected' : ''}>${s.name} - ${fmt(s.cost)}</option>`).join('')}
+          </select>
+          <div class="form-text">${esc(ship.estimate)}. Gratis ongkir untuk pembelian di atas Rp 5.000.000.</div>
+        </div>
+        <div class="summary-row"><span>Subtotal (${cartCount()} item)</span><span>${fmt(subtotal)}</span></div>
+        <div class="summary-row"><span>Ongkos kirim</span><span>${cost ? fmt(cost) : '<span class="text-success fw-bold">Gratis</span>'}</span></div>
+        <div class="summary-row total"><span>Total</span><span class="text-primary">${fmt(subtotal + cost)}</span></div>
+        <a href="checkout.html" class="btn btn-primary-custom w-100 mt-3">Lanjut ke Checkout</a>
+        <div class="small text-muted text-center mt-2"><i class="bi bi-shield-lock"></i> Transaksi dilindungi verifikasi admin</div>
+      </div>`;
+
+      document.getElementById('ship').addEventListener('change', (e) => { shipping = e.target.value; render(); });
+      box.querySelectorAll('[data-inc]').forEach((b) => b.addEventListener('click', () => {
+        const it = getCart().find((x) => x.productId === Number(b.dataset.inc));
+        updateCartQty(b.dataset.inc, it.qty + 1);
+        render();
+      }));
+      box.querySelectorAll('[data-dec]').forEach((b) => b.addEventListener('click', () => {
+        const it = getCart().find((x) => x.productId === Number(b.dataset.dec));
+        updateCartQty(b.dataset.dec, it.qty - 1);
+        render();
+      }));
+      box.querySelectorAll('[data-remove]').forEach((b) => b.addEventListener('click', () => {
+        removeFromCart(b.dataset.remove);
+        toast('Produk dihapus dari keranjang', 'secondary');
+        render();
+      }));
+
+      document.getElementById('cartSubtitle').textContent = items.length + ' produk, total ' + fmt(subtotal + cost);
+      paintCartBadge();
+    }
+
+    render();
+  </script>
+</body>
+</html>

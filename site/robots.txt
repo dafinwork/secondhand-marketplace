@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dafinwork.github.io/secondhand-marketplace/sitemap.xml

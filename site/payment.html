@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unggah Bukti Pembayaran - SecondHand Marketplace</title>
+  <meta name="robots" content="noindex">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body data-nav="">
+  <div id="siteNav"></div>
+
+  <section class="page-band">
+    <div class="container">
+      <h1>Pembayaran</h1>
+      <p>Selesaikan pembayaran agar pesanan diproses seller.</p>
+    </div>
+  </section>
+
+  <main class="py-5" id="wrap"></main>
+
+  <div id="siteFooter"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    if (!requireLogin('payment.html')) {
+      // redirect
+    } else {
+      const id = qs('o');
+      const order = getOrders().find((o) => String(o.id) === String(id)) || getOrders()[0];
+
+      if (!order) {
+        document.getElementById('wrap').innerHTML = `<div class="container"><div class="empty-state border rounded-3 bg-white">
+          <i class="bi bi-receipt"></i><h5>Pesanan tidak ditemukan</h5>
+          <p>Cek daftar pesanan kamu untuk melihat status pembayaran.</p>
+          <a class="btn btn-primary-custom" href="orders.html">Lihat Pesanan</a></div></div>`;
+      } else if (order.paymentStatus === 'verified') {
+        document.getElementById('wrap').innerHTML = `<div class="container"><div class="empty-state border rounded-3 bg-white">
+          <i class="bi bi-check-circle text-success" style="font-size:3.5rem"></i>
+          <h5>Pembayaran sudah diverifikasi</h5>
+          <p>Pesanan ${esc(order.invoice)} sedang diproses seller.</p>
+          <a class="btn btn-primary-custom" href="tracking.html?o=${order.id}">Lacak Pesanan</a></div></div>`;
+      } else {
+        document.getElementById('wrap').innerHTML = `<div class="container">
+          <div class="row g-4">
+            <div class="col-lg-7">
+              <div class="stat-card">
+                <h5 class="fw-bold text-dark mb-3">Nomor Pesanan: <span class="text-primary">${esc(order.invoice)}</span></h5>
+
+                ${order.paymentMethod === 'bank_transfer' ? `
+                <div class="alert alert-info d-flex gap-2">
+                  <i class="bi bi-info-circle-fill"></i>
+                  <div>Silakan transfer tepat sebesar <strong>${fmt(order.total)}</strong> ke rekening berikut, lalu unggah bukti transfer.</div>
+                </div>
+                <ul class="meta-list mb-3">
+                  <li><span>Bank</span><span>${esc(order.bankName || 'BCA')}</span></li>
+                  <li><span>Nomor Rekening</span><span>${esc(order.accountNumber || '1234567890')}</span></li>
+                  <li><span>Atas Nama</span><span>${esc(order.accountName || getUser().name)}</span></li>
+                  <li><span>Total Transfer</span><span class="text-primary fw-bold">${fmt(order.total)}</span></li>
+                </ul>` : order.paymentMethod === 'ewallet' ? `
+                <div class="alert alert-info d-flex gap-2">
+                  <i class="bi bi-info-circle-fill"></i>
+                  <div>Buka aplikasi e-wallet kamu dan transfer <strong>${fmt(order.total)}</strong> ke nomor 0812-3456-7890 (SecondHand Marketplace).</div>
+                </div>` : `
+                <div class="alert alert-warning d-flex gap-2">
+                  <i class="bi bi-exclamation-circle-fill"></i>
+                  <div>Bayar saat barang diterima. Pastikan uang tunai sebesar <strong>${fmt(order.total)}</strong> untuk kurir.</div>
+                </div>`}
+
+                <form id="payForm">
+                  <label class="form-label small fw-semibold" for="proof">Unggah bukti pembayaran (gambar)</label>
+                  <input class="form-control" type="file" id="proof" accept="image/*">
+                  <div class="form-text">Maks 2 MB. Pada versi demo, nama file disimpan sebagai referensi bukti.</div>
+
+                  <label class="form-label small fw-semibold mt-3" for="note">Catatan untuk admin (opsional)</label>
+                  <textarea class="form-control" id="note" rows="2" placeholder="mis. transfer dari rekening atas nama sendiri"></textarea>
+
+                  <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="confirm" required>
+                    <label class="form-check-label small" for="confirm">Saya memastikan nominal dan data transfer sudah benar.</label>
+                  </div>
+
+                  <button class="btn btn-primary-custom w-100 mt-3" type="submit"><i class="bi bi-upload"></i> Kirim Bukti Pembayaran</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="col-lg-5">
+              <div class="summary-card">
+                <h5 class="fw-bold text-dark mb-3">Rincian Pesanan</h5>
+                ${order.items.map((i) => {
+                  const p = getProductById(i.productId);
+                  return `<div class="d-flex gap-2 mb-3">
+                    <img src="assets/img/products/${p?.image || 'no-image.svg'}" alt="${esc(p?.name || '')}" width="56" height="56"
+                         style="width:56px;height:56px;object-fit:cover;border-radius:8px">
+                    <div class="flex-grow-1 small">
+                      <div class="fw-semibold text-dark text-truncate">${esc(p?.name || 'Produk')}</div>
+                      <div class="text-muted">${i.qty} x ${fmt(i.price)}</div>
+                    </div>
+                    <div class="small fw-semibold">${fmt(i.subtotal)}</div>
+                  </div>`;
+                }).join('')}
+                <div class="summary-row"><span>Subtotal</span><span>${fmt(order.subtotal)}</span></div>
+                <div class="summary-row"><span>Ongkir</span><span>${order.shipping ? fmt(order.shipping) : 'Gratis'}</span></div>
+                <div class="summary-row total"><span>Total</span><span class="text-primary">${fmt(order.total)}</span></div>
+                <a href="tracking.html?o=${order.id}" class="btn btn-outline-secondary w-100 mt-3"><i class="bi bi-geo-alt"></i> Lihat Status Pengiriman</a>
+              </div>
+            </div>
+          </div>
+        </div>`;
+
+        document.getElementById('payForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const file = document.getElementById('proof').files[0];
+          const orders = load(KEY.orders, []);
+          const o = orders.find((x) => x.id === order.id);
+          if (o) {
+            o.paymentStatus = 'pending';
+            o.proof = file ? file.name : 'demo-bukti-transfer.png';
+            o.proofNote = document.getElementById('note').value.trim();
+            save(KEY.orders, orders);
+          }
+          const notifs = load(KEY.notifications, SEED_NOTIFICATIONS);
+          notifs.unshift({
+            id: Date.now(), userId: getUser().id, type: 'payment',
+            title: 'Bukti Pembayaran Dikirim',
+            message: 'Bukti untuk ' + order.invoice + ' sedang menunggu verifikasi admin.',
+            read: false, createdAt: new Date().toLocaleString('id-ID'),
+          });
+          save(KEY.notifications, notifs);
+
+          toast('Bukti pembayaran terkirim', 'success');
+          setTimeout(() => (location.href = 'tracking.html?o=' + order.id), 800);
+        });
+      }
+    }
+  </script>
+</body>
+</html>

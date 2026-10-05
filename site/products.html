@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Semua Produk - SecondHand Marketplace</title>
+  <meta name="description" content="Jelajahi katalog barang bekas terverifikasi SecondHand Marketplace: elektronik, smartphone, fashion, kamera, furniture, olahraga, dan lainnya.">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body data-nav="products.html">
+  <div id="siteNav"></div>
+
+  <section class="page-band">
+    <div class="container">
+      <h1>Semua Produk</h1>
+      <p id="bandSubtitle">Barang bekas terverifikasi dari seller berlisensi.</p>
+    </div>
+  </section>
+
+  <main class="py-5">
+    <div class="container">
+      <div class="row g-4">
+        <aside class="col-lg-3">
+          <div class="filter-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0">Filter</h6>
+              <a href="products.html" class="small text-decoration-none">Reset</a>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-muted" for="q">Kata Kunci</label>
+              <input type="search" id="q" class="form-control form-control-sm" placeholder="mis. iPhone">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-muted" for="sort">Urutkan</label>
+              <select id="sort" class="form-select form-select-sm">
+                <option value="new">Terbaru</option>
+                <option value="price-asc">Harga: rendah ke tinggi</option>
+                <option value="price-desc">Harga: tinggi ke rendah</option>
+                <option value="popular">Paling dilihat</option>
+                <option value="discount">Diskon terbesar</option>
+              </select>
+            </div>
+
+            <hr>
+            <h6 class="mb-2">Kategori</h6>
+            <ul class="filter-list" id="catList"></ul>
+
+            <hr>
+            <h6 class="mb-2">Kondisi</h6>
+            <ul class="filter-list" id="condList">
+              <li><a href="#" data-cond="like_new"><i class="bi bi-stars"></i> Like New <span class="count"></span></a></li>
+              <li><a href="#" data-cond="good"><i class="bi bi-check-circle"></i> Good <span class="count"></span></a></li>
+              <li><a href="#" data-cond="fair"><i class="bi bi-exclamation-circle"></i> Fair <span class="count"></span></a></li>
+            </ul>
+
+            <hr>
+            <h6 class="mb-2">Harga</h6>
+            <input type="range" class="form-range" id="priceMax" min="100000" max="25000000" step="100000" value="25000000">
+            <div class="small text-muted">Maks. <strong id="priceLabel">Rp 25.000.000</strong></div>
+
+            <hr>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="onlyVerified" checked>
+              <label class="form-check-label small" for="onlyVerified">Hanya terverifikasi</label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="inStockOnly">
+              <label class="form-check-label small" for="inStockOnly">Stok tersedia</label>
+            </div>
+          </div>
+        </aside>
+
+        <div class="col-lg-9">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div class="text-muted small" id="resultCount">Memuat...</div>
+            <div class="d-flex flex-wrap gap-2" id="activeChips"></div>
+          </div>
+          <div class="row g-3" id="grid"></div>
+          <nav class="mt-4 d-flex justify-content-center" id="pager" aria-label="Navigasi halaman"></nav>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    const state = {
+      q: qs('q') || '',
+      cat: qs('cat') || '',
+      cond: qs('cond') || '',
+      sort: qs('sort') || 'new',
+      verified: true,
+      stock: false,
+      maxPrice: 25000000,
+      page: Number(qs('page')) || 1,
+      perPage: 8,
+    };
+
+    const el = (id) => document.getElementById(id);
+
+    function syncUrl() {
+      const params = new URLSearchParams();
+      if (state.q) params.set('q', state.q);
+      if (state.cat) params.set('cat', state.cat);
+      if (state.cond) params.set('cond', state.cond);
+      if (state.sort !== 'new') params.set('sort', state.sort);
+      if (state.page > 1) params.set('page', state.page);
+      history.replaceState(null, '', params.toString() ? '?' + params : 'products.html');
+    }
+
+    function filtered() {
+      const q = state.q.toLowerCase();
+      let list = allProducts().filter((p) => {
+        if (state.verified && p.verification !== 'approved') return false;
+        if (state.stock && p.stock < 1) return false;
+        if (state.cat && p.categoryId !== getCategory(state.cat)?.id) return false;
+        if (state.cond && p.condition !== state.cond) return false;
+        if (p.price > state.maxPrice) return false;
+        if (q && !(p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q))) return false;
+        return true;
+      });
+      const sorters = {
+        new: (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+        'price-asc': (a, b) => a.price - b.price,
+        'price-desc': (a, b) => b.price - a.price,
+        popular: (a, b) => b.views - a.views,
+        discount: (a, b) => discount(b) - discount(a),
+      };
+      return list.sort(sorters[state.sort] || sorters.new);
+    }
+
+    function renderFilters() {
+      const list = allProducts();
+      el('catList').innerHTML = `<li><a href="#" data-cat="" class="${!state.cat ? 'active' : ''}">
+          <i class="bi bi-grid"></i> Semua kategori <span class="count">${list.filter((p) => p.verification === 'approved').length}</span></a></li>` +
+        CATEGORIES.map((c) => `<li><a href="#" data-cat="${c.slug}" class="${state.cat === c.slug ? 'active' : ''}">
+          <i class="bi ${c.icon}"></i> ${c.name} <span class="count">${list.filter((p) => p.categoryId === c.id && p.verification === 'approved').length}</span></a></li>`).join('');
+
+      document.querySelectorAll('#condList a').forEach((a) => {
+        const key = a.dataset.cond;
+        a.classList.toggle('active', state.cond === key);
+        a.querySelector('.count').textContent = list.filter((p) => p.condition === key && p.verification === 'approved').length;
+      });
+    }
+
+    function renderChips() {
+      const chips = [];
+      if (state.q) chips.push(['q', 'Kata kunci: ' + state.q]);
+      if (state.cat) chips.push(['cat', getCategory(state.cat)?.name || state.cat]);
+      if (state.cond) chips.push(['cond', 'Kondisi: ' + CONDITION_LABELS[state.cond].label]);
+      if (state.maxPrice < 25000000) chips.push(['price', 'Maks ' + fmt(state.maxPrice)]);
+      if (!state.verified) chips.push(['verified', 'Termasuk belum terverifikasi']);
+      el('activeChips').innerHTML = chips
+        .map(([k, t]) => `<span class="chip active">${esc(t)} <button class="btn-close btn-sm" data-clear="${k}" aria-label="Hapus filter"></button></span>`)
+        .join('');
+    }
+
+    function render() {
+      const list = filtered();
+      const total = Math.ceil(list.length / state.perPage);
+      state.page = Math.min(Math.max(1, state.page), total || 1);
+      const slice = list.slice((state.page - 1) * state.perPage, state.page * state.perPage);
+
+      el('resultCount').innerHTML = 'Menampilkan <strong>' + slice.length + '</strong> dari <strong>' + list.length + '</strong> produk';
+      renderProducts(el('grid'), slice);
+      renderFilters();
+      renderChips();
+      syncUrl();
+
+      let pager = '';
+      if (total > 1) {
+        pager += `<button class="btn btn-outline-secondary btn-sm ${state.page === 1 ? 'disabled' : ''}" data-page="${state.page - 1}"><i class="bi bi-chevron-left"></i> Sebelumnya</button>`;
+        for (let i = 1; i <= total; i++) {
+          pager += `<button class="btn btn-sm ${i === state.page ? 'btn-primary' : 'btn-outline-secondary'}" data-page="${i}">${i}</button>`;
+        }
+        pager += `<button class="btn btn-outline-secondary btn-sm ${state.page === total ? 'disabled' : ''}" data-page="${state.page + 1}">Berikutnya <i class="bi bi-chevron-right"></i></button>`;
+      }
+      el('pager').innerHTML = pager;
+      document.querySelectorAll('[data-page]').forEach((b) =>
+        b.addEventListener('click', () => {
+          state.page = Number(b.dataset.page);
+          render();
+          window.scrollTo({ top: 300, behavior: 'smooth' });
+        })
+      );
+
+      const cat = getCategory(state.cat);
+      document.title = 'Semua Produk' + (cat ? ' - ' + cat.name : '') + ' - SecondHand Marketplace';
+    }
+
+    el('q').value = state.q;
+    el('sort').value = state.sort;
+    el('onlyVerified').checked = state.verified;
+    el('priceMax').value = state.maxPrice;
+    el('priceLabel').textContent = fmt(state.maxPrice);
+
+    el('q').addEventListener('input', (e) => { state.q = e.target.value; state.page = 1; render(); });
+    el('sort').addEventListener('change', (e) => { state.sort = e.target.value; state.page = 1; render(); });
+    el('priceMax').addEventListener('input', (e) => {
+      state.maxPrice = Number(e.target.value);
+      el('priceLabel').textContent = fmt(state.maxPrice);
+      state.page = 1;
+      render();
+    });
+    el('onlyVerified').addEventListener('change', (e) => { state.verified = e.target.checked; state.page = 1; render(); });
+    el('inStockOnly').addEventListener('change', (e) => { state.stock = e.target.checked; state.page = 1; render(); });
+
+    el('catList').addEventListener('click', (e) => {
+      const a = e.target.closest('a[data-cat]');
+      if (!a) return;
+      e.preventDefault();
+      state.cat = a.dataset.cat;
+      state.page = 1;
+      render();
+    });
+
+    el('condList').addEventListener('click', (e) => {
+      const a = e.target.closest('a[data-cond]');
+      if (!a) return;
+      e.preventDefault();
+      state.cond = state.cond === a.dataset.cond ? '' : a.dataset.cond;
+      state.page = 1;
+      render();
+    });
+
+    el('activeChips').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-clear]');
+      if (!b) return;
+      const k = b.dataset.clear;
+      if (k === 'q') { state.q = ''; el('q').value = ''; }
+      if (k === 'cat') state.cat = '';
+      if (k === 'cond') state.cond = '';
+      if (k === 'price') { state.maxPrice = 25000000; el('priceMax').value = 25000000; el('priceLabel').textContent = fmt(25000000); }
+      if (k === 'verified') { state.verified = true; el('onlyVerified').checked = true; }
+      state.page = 1;
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

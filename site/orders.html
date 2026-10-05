@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pesanan Saya - SecondHand Marketplace</title>
+  <meta name="robots" content="noindex">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body data-nav="">
+  <div id="siteNav"></div>
+
+  <section class="page-band">
+    <div class="container">
+      <h1>Pesanan Saya</h1>
+      <p>Riwayat transaksi, status pembayaran, dan pelacakan pengiriman.</p>
+    </div>
+  </section>
+
+  <main class="py-5">
+    <div class="container">
+      <div class="d-flex flex-wrap gap-2 mb-4" id="filters">
+        <button class="chip active" data-filter="all">Semua</button>
+        <button class="chip" data-filter="pending">Menunggu Bayar</button>
+        <button class="chip" data-filter="processing">Diproses</button>
+        <button class="chip" data-filter="shipped">Dikirim</button>
+        <button class="chip" data-filter="completed">Selesai</button>
+      </div>
+      <div id="list"></div>
+    </div>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    if (!requireLogin('orders.html')) {
+      // redirect
+    } else {
+      let filter = 'all';
+
+      function render() {
+        const orders = getOrders().filter((o) => filter === 'all' || o.status === filter);
+        const list = document.getElementById('list');
+
+        if (!orders.length) {
+          list.innerHTML = `<div class="empty-state border rounded-3 bg-white">
+            <i class="bi bi-receipt"></i><h5>Belum ada pesanan</h5>
+            <p>Pesanan yang kamu buat akan muncul di sini.</p>
+            <a class="btn btn-primary-custom" href="products.html">Mulai Belanja</a></div>`;
+          return;
+        }
+
+        list.innerHTML = orders.map((o) => {
+          const st = ORDER_STATUS[o.status];
+          const payBadge = o.paymentStatus === 'verified'
+            ? '<span class="badge bg-success"><i class="bi bi-check2-circle"></i> Terverifikasi</span>'
+            : o.paymentStatus === 'rejected'
+              ? '<span class="badge bg-danger">Ditolak</span>'
+              : '<span class="badge bg-warning">Menunggu verifikasi</span>';
+
+          return `<div class="stat-card mb-3">
+            <div class="d-flex flex-wrap justify-content-between gap-2 pb-3 mb-3 border-bottom">
+              <div>
+                <div class="fw-bold text-dark">${esc(o.invoice)}</div>
+                <div class="small text-muted">Dibuat ${esc(o.createdAt)}</div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                ${payBadge}
+                <span class="badge bg-${st.badge}"><i class="bi ${st.icon}"></i> ${st.label}</span>
+              </div>
+            </div>
+
+            ${o.items.map((i) => {
+              const p = getProductById(i.productId);
+              return `<div class="d-flex gap-3 align-items-center mb-3">
+                <img src="assets/img/products/${p?.image || 'no-image.svg'}" alt="${esc(p?.name || '')}" width="64" height="64"
+                     style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0">
+                <div class="flex-grow-1">
+                  <a href="${p ? 'product.html?p=' + p.slug : '#'}" class="fw-semibold text-dark text-decoration-none d-block text-truncate">${esc(p?.name || 'Produk telah dihapus')}</a>
+                  <div class="small text-muted">${i.qty} x ${fmt(i.price)}</div>
+                </div>
+                <div class="fw-semibold">${fmt(i.subtotal)}</div>
+              </div>`;
+            }).join('')}
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <div class="small text-muted">
+                <i class="bi bi-geo-alt"></i> ${esc(o.address || '-')}<br>
+                ${o.tracking ? `<i class="bi bi-truck"></i> Resi: <strong>${esc(o.tracking)}</strong>` : '<i class="bi bi-hourglass-split"></i> Belum ada nomor resi'}
+              </div>
+              <div class="d-flex flex-wrap gap-2">
+                <div class="me-3 text-end">
+                  <div class="small text-muted">Total</div>
+                  <div class="fw-bold text-primary fs-5">${fmt(o.total)}</div>
+                </div>
+                ${o.paymentStatus !== 'verified' ? `<a class="btn btn-primary btn-sm" href="payment.html?o=${o.id}">Bayar Sekarang</a>` : ''}
+                ${o.status === 'delivered' ? `<button class="btn btn-success btn-sm" data-confirm="${o.id}">Pesanan Diterima</button>` : ''}
+                ${o.status === 'completed' ? `<a class="btn btn-outline-secondary btn-sm" href="review.html?o=${o.id}">Beri Ulasan</a>` : ''}
+                <a class="btn btn-outline-secondary btn-sm" href="tracking.html?o=${o.id}"><i class="bi bi-geo-alt"></i> Lacak</a>
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+
+        list.querySelectorAll('[data-confirm]').forEach((b) =>
+          b.addEventListener('click', () => {
+            advanceOrder(b.dataset.confirm, 'completed');
+            toast('Terima kasih! Pesanan ditandai selesai.', 'success');
+            render();
+          })
+        );
+      }
+
+      document.getElementById('filters').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-filter]');
+        if (!b) return;
+        filter = b.dataset.filter;
+        document.querySelectorAll('#filters .chip').forEach((c) => c.classList.toggle('active', c === b));
+        render();
+      });
+
+      render();
+    }
+  </script>
+</body>
+</html>

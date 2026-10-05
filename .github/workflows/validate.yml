@@ -1,0 +1,41 @@
+name: Validate Static Site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'tools/**'
+  pull_request:
+    paths:
+      - 'site/**'
+      - 'tools/**'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install test dependencies
+        run: npm install --no-save jsdom
+
+      - name: Check data and core scripts syntax
+        run: node --check site/assets/js/data.js && node --check site/assets/js/app.js
+
+      - name: Check inline scripts syntax
+        run: node tools/check-inline-scripts.js
+
+      - name: Smoke test core logic
+        run: node tools/smoke-test.js
+
+      - name: Render every page
+        run: node tools/render-test.js
+
+      - name: Verify required files exist
+        run: node tools/check-assets.js

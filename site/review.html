@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beri Ulasan - SecondHand Marketplace</title>
+  <meta name="robots" content="noindex">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body data-nav="">
+  <div id="siteNav"></div>
+
+  <section class="page-band">
+    <div class="container">
+      <h1>Beri Ulasan</h1>
+      <p>Bantu pembeli lain dengan pengalamanmu.</p>
+    </div>
+  </section>
+
+  <main class="py-5">
+    <div class="container">
+      <div class="row g-4 justify-content-center" id="wrap"></div>
+    </div>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    if (!requireLogin('review.html')) {
+      // redirect
+    } else {
+      const wrap = document.getElementById('wrap');
+      const byOrder = qs('o');
+      let order = null;
+
+      if (byOrder) {
+        order = getOrders().find((o) => String(o.id) === String(byOrder));
+      } else {
+        order = getOrders().find((o) => ['completed', 'delivered'].includes(o.status));
+      }
+
+      if (!order) {
+        wrap.innerHTML = `<div class="col-lg-6"><div class="empty-state border rounded-3 bg-white">
+          <i class="bi bi-chat-square-text"></i><h5>Belum ada pesanan yang bisa diulas</h5>
+          <p>Ulasan hanya bisa ditulis untuk pesanan yang sudah selesai.</p>
+          <a class="btn btn-primary-custom" href="products.html">Mulai Belanja</a></div></div>`;
+      } else {
+        wrap.innerHTML = `<div class="col-lg-7">
+          <form class="stat-card" id="reviewForm">
+            <h5 class="fw-bold text-dark mb-1">Pesanan ${esc(order.invoice)}</h5>
+            <div class="small text-muted mb-3">Pilih produk yang ingin kamu ulas.</div>
+
+            <div id="productPick" class="mb-3">
+              ${order.items.map((i, idx) => {
+                const p = getProductById(i.productId);
+                return `<div class="form-check mb-2">
+                  <input class="form-check-input" type="radio" name="pid" id="pid${idx}" value="${i.productId}" ${idx === 0 ? 'checked' : ''}>
+                  <label class="form-check-label" for="pid${idx}">${esc(p?.name || 'Produk')}</label>
+                </div>`;
+              }).join('')}
+            </div>
+
+            <label class="form-label small fw-semibold">Rating</label>
+            <div class="star-picker mb-3" id="stars"></div>
+
+            <label class="form-label small fw-semibold" for="comment">Ulasan</label>
+            <textarea class="form-control" id="comment" rows="4" required placeholder="Bagaimana kondisi barang, responsiveness seller, dan pengalaman pengiriman?"></textarea>
+
+            <label class="form-label small fw-semibold mt-3" for="photo">Foto (opsional)</label>
+            <input class="form-control" id="photo" type="file" accept="image/*">
+
+            <button class="btn btn-primary-custom w-100 mt-4" type="submit"><i class="bi bi-send"></i> Kirim Ulasan</button>
+          </form>
+        </div>`;
+
+        let rating = 5;
+        const starsEl = document.getElementById('stars');
+        const paintStars = () => {
+          starsEl.innerHTML = [1, 2, 3, 4, 5].map((i) =>
+            `<i class="bi bi-star${i <= rating ? '-fill on' : ''}" data-v="${i}"></i>`).join('');
+        };
+        paintStars();
+        starsEl.addEventListener('click', (e) => {
+          const i = e.target.closest('i[data-v]');
+          if (!i) return;
+          rating = Number(i.dataset.v);
+          paintStars();
+        });
+
+        document.getElementById('reviewForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const pid = Number(document.querySelector('input[name="pid"]:checked').value);
+          submitReview({
+            productId: pid,
+            orderId: order.id,
+            rating,
+            comment: document.getElementById('comment').value.trim(),
+            image: document.getElementById('photo').files[0]?.name || null,
+          });
+          toast('Ulasan terkirim. Terima kasih!', 'success');
+          setTimeout(() => (location.href = 'product.html?p=' + getProductById(pid).slug), 800);
+        });
+      }
+    }
+  </script>
+</body>
+</html>

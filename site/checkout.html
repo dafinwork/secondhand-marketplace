@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - SecondHand Marketplace</title>
+  <meta name="robots" content="noindex">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body data-nav="">
+  <div id="siteNav"></div>
+
+  <section class="page-band">
+    <div class="container">
+      <h1>Checkout</h1>
+      <p>Lengkapi alamat pengiriman dan metode pembayaran.</p>
+    </div>
+  </section>
+
+  <main class="py-5">
+    <div class="container">
+      <div class="d-flex align-items-center gap-2 mb-4 small">
+        <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width:26px;height:26px">1</span>
+        <span class="fw-semibold text-dark">Alamat &amp; Pembayaran</span>
+        <i class="bi bi-chevron-right text-muted"></i>
+        <span class="badge bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width:26px;height:26px">2</span>
+        <span class="text-muted">Upload Bukti</span>
+        <i class="bi bi-chevron-right text-muted"></i>
+        <span class="badge bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width:26px;height:26px">3</span>
+        <span class="text-muted">Selesai</span>
+      </div>
+
+      <form id="checkoutForm" class="row g-4">
+        <div class="col-lg-8">
+          <div class="stat-card mb-4">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt text-primary"></i> Alamat Pengiriman</h5>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold" for="name">Nama Penerima</label>
+                <input class="form-control" id="name" required value="">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold" for="phone">Nomor Telepon</label>
+                <input class="form-control" id="phone" required value="">
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-semibold" for="address">Alamat Lengkap</label>
+                <textarea class="form-control" id="address" rows="3" required placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan, kota, provinsi, kode pos"></textarea>
+              </div>
+              <div class="col-12">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="saveAddr" checked>
+                  <label class="form-check-label small" for="saveAddr">Simpan alamat ini untuk pesanan berikutnya</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card mb-4">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-truck text-primary"></i> Pengiriman</h5>
+            <div id="shipOptions"></div>
+          </div>
+
+          <div class="stat-card">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-credit-card text-primary"></i> Metode Pembayaran</h5>
+            <div id="payOptions"></div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="summary-card">
+            <h5 class="fw-bold text-dark mb-3">Ringkasan Pesanan</h5>
+            <div id="items"></div>
+            <hr>
+            <div id="totals"></div>
+            <button type="submit" class="btn btn-primary-custom w-100 mt-3"><i class="bi bi-bag-check"></i> Buat Pesanan</button>
+            <div class="small text-muted text-center mt-2">Pesanan akan masuk ke status <em>Menunggu Pembayaran</em>.</div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    if (!requireLogin('checkout.html')) {
+      // dihentikan oleh redirect
+    } else {
+      let shipping = 'reguler';
+      let payment = 'bank_transfer';
+
+      const user = getUser();
+      document.getElementById('name').value = user.name || '';
+      document.getElementById('phone').value = user.phone || '';
+      document.getElementById('address').value = user.address || '';
+
+      const items = cartDetail();
+      if (!items.length) {
+        document.getElementById('checkoutForm').innerHTML = `<div class="col-12"><div class="empty-state border rounded-3 bg-white">
+          <i class="bi bi-bag-x"></i><h5>Keranjang kosong</h5>
+          <p>Tambahkan produk sebelum melakukan checkout.</p>
+          <a class="btn btn-primary-custom" href="products.html">Mulai Belanja</a></div></div>`;
+        document.getElementById('checkoutForm').classList.remove('row');
+      }
+
+      function renderShip() {
+        document.getElementById('shipOptions').innerHTML = SHIPPING_METHODS.map((s) => `
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="radio" name="ship" id="ship-${s.id}" value="${s.id}" ${s.id === shipping ? 'checked' : ''}>
+            <label class="form-check-label d-flex justify-content-between w-100" for="ship-${s.id}">
+              <span>${s.name}<br><small class="text-muted">Estimasi ${s.estimate}</small></span>
+              <strong>${fmt(s.cost)}</strong>
+            </label>
+          </div>`).join('');
+        document.querySelectorAll('input[name="ship"]').forEach((r) =>
+          r.addEventListener('change', () => { shipping = r.value; renderTotals(); })
+        );
+      }
+
+      function renderPay() {
+        const opts = [
+          { id: 'bank_transfer', label: 'Transfer Bank', desc: 'BCA, BNI, Mandiri, BSI, BRI, CIMB Niaga', icon: 'bi-bank' },
+          { id: 'ewallet', label: 'E-Wallet', desc: 'GoPay, OVO, DANA, ShopeePay', icon: 'bi-phone' },
+          { id: 'cod', label: 'Bayar di Tempat (COD)', desc: 'Tersedia untuk area Jabodetabek', icon: 'bi-cash-coin' },
+        ];
+        document.getElementById('payOptions').innerHTML = opts.map((o) => `
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="radio" name="pay" id="pay-${o.id}" value="${o.id}" ${o.id === payment ? 'checked' : ''}>
+            <label class="form-check-label d-flex justify-content-between w-100" for="pay-${o.id}">
+              <span><i class="bi ${o.icon} me-1 text-primary"></i>${o.label}<br><small class="text-muted">${o.desc}</small></span>
+            </label>
+          </div>`).join('');
+        document.querySelectorAll('input[name="pay"]').forEach((r) =>
+          r.addEventListener('change', () => (payment = r.value))
+        );
+      }
+
+      function renderTotals() {
+        const subtotal = cartSubtotal();
+        const ship = SHIPPING_METHODS.find((s) => s.id === shipping);
+        const cost = subtotal >= 5000000 || payment === 'cod' ? 0 : ship.cost;
+        document.getElementById('items').innerHTML = items.map((i) => `
+          <div class="d-flex justify-content-between small mb-2">
+            <span class="text-truncated me-2">${i.qty}x ${esc(i.product.name)}</span>
+            <strong>${fmt(i.subtotal)}</strong>
+          </div>`).join('');
+        document.getElementById('totals').innerHTML = `
+          <div class="summary-row"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>
+          <div class="summary-row"><span>Ongkir (${esc(ship.name.split(' ')[0])})</span><span>${cost ? fmt(cost) : '<span class="text-success fw-bold">Gratis</span>'}</span></div>
+          <div class="summary-row total"><span>Total Bayar</span><span class="text-primary">${fmt(subtotal + cost)}</span></div>`;
+      }
+
+      if (items.length) {
+        renderShip();
+        renderPay();
+        renderTotals();
+      }
+
+      document.getElementById('checkoutForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const subtotal = cartSubtotal();
+        const ship = SHIPPING_METHODS.find((s) => s.id === shipping);
+        const cost = subtotal >= 5000000 || payment === 'cod' ? 0 : ship.cost;
+        const u = getUser();
+        const address = document.getElementById('address').value.trim();
+
+        if (document.getElementById('saveAddr').checked) {
+          u.name = document.getElementById('name').value.trim();
+          u.phone = document.getElementById('phone').value.trim();
+          u.address = address;
+          save(KEY.user, u);
+        }
+
+        const order = createOrder({
+          total: subtotal + cost,
+          subtotal,
+          shipping: cost,
+          shippingMethod: shipping,
+          address,
+          paymentMethod: payment,
+          paymentStatus: 'pending',
+          bankName: payment === 'bank_transfer' ? BANK_LIST[0] : null,
+          accountNumber: payment === 'bank_transfer' ? '1234567890' : null,
+          accountName: payment === 'bank_transfer' ? u.name : null,
+          items: items.map((i) => ({
+            productId: i.productId,
+            sellerId: i.product.sellerId,
+            qty: i.qty,
+            price: i.product.price,
+            subtotal: i.subtotal,
+            status: 'pending',
+          })),
+        });
+
+        toast('Pesanan ' + order.invoice + ' dibuat', 'success');
+        setTimeout(() => (location.href = 'payment.html?o=' + order.id), 700);
+      });
+    }
+  </script>
+</body>
+</html>

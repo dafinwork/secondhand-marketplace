@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecondHand Marketplace - Jual Beli Barang Bekas Berkualitas</title>
+  <meta name="description" content="SecondHand Marketplace - platform jual beli barang bekas berkualitas dengan sistem verifikasi seller dan pembayaran aman.">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="canonical" href="https://dafinwork.github.io/secondhand-marketplace/">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body data-nav="index.html">
+  <a href="#konten" class="visually-hidden-focusable">Lompat ke konten utama</a>
+  <div id="siteNav"></div>
+
+  <main id="konten">
+    <section class="hero-section">
+      <div class="container position-relative">
+        <div class="row">
+          <div class="col-lg-7">
+            <h1 class="hero-title">Temukan Barang Bekas <span>Berkualitas</span> Harga Terbaik</h1>
+            <p class="hero-subtitle">Platform jual beli barang bekas terpercaya dengan sistem verifikasi kualitas. Hemat hingga 70% dari harga baru!</p>
+            <div class="d-flex flex-wrap gap-3">
+              <a href="products.html" class="btn btn-primary-custom"><i class="bi bi-search"></i> Jelajahi Produk</a>
+              <a href="seller.html" class="btn btn-outline-custom"><i class="bi bi-shop"></i> Jadi Seller</a>
+            </div>
+            <div class="hero-stats">
+              <div class="hero-stat"><h3 id="statProducts">0</h3><p>Produk Terverifikasi</p></div>
+              <div class="hero-stat"><h3 id="statSellers">0</h3><p>Seller Terdaftar</p></div>
+              <div class="hero-stat"><h3 id="statSold">0</h3><p>Transaksi Selesai</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-5 border-bottom bg-white">
+      <div class="container">
+        <div class="row g-4 text-center">
+          <div class="col-6 col-lg-3">
+            <div class="trust-badge justify-content-center text-center flex-column">
+              <i class="bi bi-patch-check"></i>
+              <div><strong class="d-block text-dark">Seller Terverifikasi</strong><small class="text-muted">Setiap seller melewati review identitas</small></div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="trust-badge justify-content-center text-center flex-column">
+              <i class="bi bi-shield-lock"></i>
+              <div><strong class="d-block text-dark">Pembayaran Aman</strong><small class="text-muted">Verifikasi bukti transfer admin</small></div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="trust-badge justify-content-center text-center flex-column">
+              <i class="bi bi-truck"></i>
+              <div><strong class="d-block text-dark">Lacak Resi</strong><small class="text-muted">Pantau status pengiriman realtime</small></div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="trust-badge justify-content-center text-center flex-column">
+              <i class="bi bi-arrow-counterclockwise"></i>
+              <div><strong class="d-block text-dark">Dispute protection</strong><small class="text-muted">Dana ditahan sampai barang diterima</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-5 bg-white" id="kategori">
+      <div class="container">
+        <div class="section-header">
+          <h2>Kategori Pilihan</h2>
+          <p>Delapan kategori untuk semua kebutuhan barang bekas Anda.</p>
+          <div class="section-divider"></div>
+        </div>
+        <div class="row g-3" id="categoryGrid"></div>
+      </div>
+    </section>
+
+    <section class="py-5" id="produk">
+      <div class="container">
+        <div class="section-header">
+          <h2>Produk Terbaru</h2>
+          <p>Barang yang baru saja lolos verifikasi dan dipublikasikan.</p>
+          <div class="section-divider"></div>
+        </div>
+        <div class="row g-3" id="productGrid"></div>
+        <div class="text-center mt-2">
+          <a href="products.html" class="btn btn-outline-custom" style="border-color:var(--primary);color:var(--primary)">Lihat Semua Produk <i class="bi bi-arrow-right"></i></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-5 bg-white">
+      <div class="container">
+        <div class="section-header">
+          <h2>Cara Kerja</h2>
+          <p>Empat langkah sederhana dari cari barang sampai barang sampai di tangan.</p>
+          <div class="section-divider"></div>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-6 col-lg-3">
+            <div class="step-card">
+              <div class="step-num">1</div>
+              <h5 class="fw-bold text-dark">Cari &amp; Filter</h5>
+              <p class="text-muted small mb-0">Gunakan kategori, kondisi barang, dan rentang harga untuk menemukan item yang tepat.</p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="step-card">
+              <div class="step-num">2</div>
+              <h5 class="fw-bold text-dark">Cek Detail</h5>
+              <p class="text-muted small mb-0">Lihat foto, deskripsi, berat, dan riwayat seller sebelum masukkan ke keranjang.</p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="step-card">
+              <div class="step-num">3</div>
+              <h5 class="fw-bold text-dark">Bayar &amp; Lacak</h5>
+              <p class="text-muted small mb-0">Transfer bank atau e-wallet, unggah bukti, lalu pantau status pesanan beserta resinya.</p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="step-card">
+              <div class="step-num">4</div>
+              <h5 class="fw-bold text-dark">Konfirmasi &amp; Ulas</h5>
+              <p class="text-muted small mb-0">Terima barang, konfirmasi, lalu beri rating agar seller lain mendapat dampak positif.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-5">
+      <div class="container">
+        <div class="row align-items-center g-5">
+          <div class="col-lg-5">
+            <h2 class="fw-bold text-dark" style="letter-spacing:-0.5px">Kenapa SecondHand?</h2>
+            <p class="text-muted">Kami membangun marketplace yang fokus pada keaslian barang. Setiap listing wajib melalui proses verifikasi admin sebelum dapat dilihat pembeli.</p>
+            <ul class="list-unstyled text-muted">
+              <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Status verifikasi terlihat jelas di setiap produk</li>
+              <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Kategori kondisi: Like New, Good, dan Fair</li>
+              <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Riwayat pesanan dan nomor resi tersimpan rapi</li>
+              <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Sistem ulasan hanya untuk pembeli yang benar-benar bertransaksi</li>
+            </ul>
+            <a href="how-it-works.html" class="btn btn-primary-custom">Pelajari Selengkapnya</a>
+          </div>
+          <div class="col-lg-7">
+            <div class="row g-3">
+              <div class="col-6"><div class="stat-card"><div class="feature-icon mb-2"><i class="bi bi-award"></i></div><div class="stat-value">4.8/5</div><div class="stat-label">Rating rata-rata transaksi</div></div></div>
+              <div class="col-6"><div class="stat-card"><div class="feature-icon mb-2 bg-tint-success"><i class="bi bi-people"></i></div><div class="stat-value">438</div><div class="stat-label">Seller terverifikasi</div></div></div>
+              <div class="col-6"><div class="stat-card"><div class="feature-icon mb-2 bg-tint-warning"><i class="bi bi-box-seam"></i></div><div class="stat-value">1.2k</div><div class="stat-label">Produk aktif</div></div></div>
+              <div class="col-6"><div class="stat-card"><div class="feature-icon mb-2 bg-tint-dark"><i class="bi bi-clock-history"></i></div><div class="stat-value">1.8%</div><div class="stat-label">Tingkat dispute</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-5" style="background:linear-gradient(135deg,var(--primary) 0%,var(--accent) 100%)">
+      <div class="container text-center text-white">
+        <h2 class="fw-bold">Siap mulai menjual?</h2>
+        <p class="opacity-90">Daftar gratis, verifikasi produk, dan jangkau ribuan pembeli.</p>
+        <a href="register.html" class="btn btn-light btn-lg fw-semibold mt-2">Daftar Gratis <i class="bi bi-arrow-right"></i></a>
+      </div>
+    </section>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    document.getElementById('categoryGrid').innerHTML = CATEGORIES.map((c) => {
+      const total = allProducts().filter((p) => p.categoryId === c.id).length;
+      return `<div class="col-6 col-md-3 col-lg-3">
+        <a class="category-card d-block text-decoration-none" href="products.html?cat=${c.slug}">
+          <div class="icon"><i class="bi ${c.icon}"></i></div>
+          <h6>${c.name}</h6>
+          <small class="text-muted">${total} produk</small>
+        </a></div>`;
+    }).join('');
+
+    const list = allProducts()
+      .filter((p) => p.verification === 'approved')
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    renderProducts(document.getElementById('productGrid'), list.slice(0, 8));
+
+    document.getElementById('statProducts').textContent = list.length + 'k+';
+    document.getElementById('statSellers').textContent = '438';
+    document.getElementById('statSold').textContent = '5.2k+';
+  </script>
+</body>
+</html>

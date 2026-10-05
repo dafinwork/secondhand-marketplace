@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jadi Seller - SecondHand Marketplace</title>
+  <meta name="description" content="Daftar menjadi seller di SecondHand Marketplace. Gratis tanpa biaya listing, dengan sistem verifikasi produk dan pembayaran terverifikasi.">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body data-nav="seller.html">
+  <div id="siteNav"></div>
+
+  <section class="hero-section" style="min-height:auto;padding:4rem 0">
+    <div class="container position-relative">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+          <span class="chip mb-3" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff">
+            <i class="bi bi-megaphone"></i> Rekrutmen seller dibuka
+          </span>
+          <h1 class="hero-title" style="font-size:2.4rem">Jual Barang Bekas Kamu ke Ribuan Pembeli</h1>
+          <p class="hero-subtitle">Gratis daftar, gratis biaya listing. Kami tangani verifikasi produk, verifikasi pembayaran, dan pelacakan pengiriman.</p>
+          <div class="d-flex flex-wrap gap-3 mt-3">
+            <a href="register.html" class="btn btn-outline-custom"><i class="bi bi-shop"></i> Daftar Jadi Seller</a>
+            <a href="how-it-works.html" class="btn btn-outline-custom">Pelajari Alurnya</a>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="stat-card">
+            <h6 class="fw-bold text-dark mb-3">Keunggulan Seller</h6>
+            <ul class="list-unstyled small text-muted mb-0">
+              <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Tanpa biaya listing atau biaya bulanan</li>
+              <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Pembayaran diverifikasi admin sebelum diteruskan</li>
+              <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Seller dapat mengatur stok dan harga sendiri</li>
+              <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Dashboard lengkap: pendapatan, pesanan, views produk</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main class="py-5">
+    <div class="container">
+      <div class="row g-5">
+        <div class="col-lg-7">
+          <div class="section-header text-start">
+            <h2 class="fs-1" style="font-size:1.8rem">Tiga Syarat Jadi Seller</h2>
+            <div class="section-divider" style="margin-left:0"></div>
+          </div>
+          <div class="d-flex gap-3 mb-4">
+            <div class="feature-icon"><i class="bi bi-person-vcard"></i></div>
+            <div><h5 class="fw-bold text-dark">Identitas jelas</h5><p class="small text-muted mb-0">Gunakan nama asli atau nama toko dengan kontak yang bisa dihubungi. Akun dengan data palsu akan dinonaktifkan.</p></div>
+          </div>
+          <div class="d-flex gap-3 mb-4">
+            <div class="feature-icon bg-tint-success"><i class="bi bi-box-seam"></i></div>
+            <div><h5 class="fw-bold text-dark">Barang kondisi jelas</h5><p class="small text-muted mb-0">Sebutkan cacat, goresan, atau komponen yang tidak berfungsi. Deskripsi jujur mempercepat proses verifikasi.</p></div>
+          </div>
+          <div class="d-flex gap-3 mb-4">
+            <div class="feature-icon bg-tint-warning"><i class="bi bi-chat-square-text"></i></div>
+            <div><h5 class="fw-bold text-dark">Responsif</h5><p class="small text-muted mb-0">Konfirmasi pesanan dalam 1x24 jam. Seller yang responsif mendapat lebih banyak ulasan positif.</p></div>
+          </div>
+
+          <h2 class="fw-bold text-dark mt-5 mb-3" style="font-size:1.5rem">Pertanyaan Umum Seller</h2>
+          <div class="accordion" id="faqSeller"></div>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="stat-card">
+            <h5 class="fw-bold text-dark mb-1">Formulir Pendaftaran Seller</h5>
+            <p class="small text-muted">Isi data singkat, akun langsung dibuat pada versi demo ini.</p>
+            <form id="sellerForm">
+              <div class="mb-3"><label class="form-label small fw-semibold">Nama / Nama Toko</label>
+                <input class="form-control" id="sName" required placeholder="mis. Toko Elektronik Jaya"></div>
+              <div class="mb-3"><label class="form-label small fw-semibold">Email</label>
+                <input type="email" class="form-control" id="sEmail" required placeholder="toko@email.com"></div>
+              <div class="mb-3"><label class="form-label small fw-semibold">Nomor WhatsApp</label>
+                <input class="form-control" id="sPhone" required placeholder="08xxxxxxxxxx"></div>
+              <div class="mb-3"><label class="form-label small fw-semibold">Domisili Pengiriman</label>
+                <textarea class="form-control" id="sAddr" rows="2" required placeholder="Kota / Kabupaten Placeholder"></textarea></div>
+              <div class="mb-3"><label class="form-label small fw-semibold">Kategori utama yang dijual</label>
+                <select class="form-select" id="sCat"></select></div>
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="sTos" required>
+                <label class="form-check-label small" for="sTos">Saya setuju menjaga keakuratan deskripsi produk.</label>
+              </div>
+              <button class="btn btn-primary-custom w-100" type="submit"><i class="bi bi-person-plus"></i> Buat Akun Seller</button>
+            </form>
+            <div class="alert alert-info small mt-3 mb-0"><i class="bi bi-info-circle"></i>
+              Akun demo sudah tersedia. Pilih peran <strong>Seller</strong> di halaman <a href="register.html">registrasi</a> atau gunakan tombol Seller pada halaman login.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    document.getElementById('sCat').innerHTML = CATEGORIES.map((c) => `<option value="${c.slug}">${c.name}</option>`).join('');
+
+    const faqs = [
+      ['Apakah ada biaya selling?', 'Tidak. Tidak ada biaya pendaftaran, biaya listing, maupun biaya bulanan.'],
+      ['Kenapa produk saya belum muncul di katalog?', 'Setiap produk baru harus disetujui admin. selama masih <em>pending</em>, produk hanya terlihat di dashboard seller.'],
+      ['Bagaimana saya tahu pembayaran masuk?', 'Dashboard seller menampilkan pesanan beserta status pembayarannya. Admin memverifikasi bukti transfer sebelum meneruskan.'],
+      ['Apakah saya bisa menjual ulang barang dari buyer saya?', 'Belum ada fitur reposelling di versi ini. Setiap barang hanya bisa memiliki satu listing aktif.'],
+    ];
+    document.getElementById('faqSeller').innerHTML = faqs.map(([q, a], i) => `
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button ${i ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" data-bs-target="#sf${i}">${q}</button>
+        </h2>
+        <div id="sf${i}" class="accordion-collapse collapse ${i ? '' : 'show'}" data-bs-parent="#faqSeller">
+          <div class="accordion-body small text-muted">${a}</div>
+        </div>
+      </div>`).join('');
+
+    document.getElementById('sellerForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      save(KEY.user, {
+        id: Date.now(),
+        name: document.getElementById('sName').value.trim(),
+        email: document.getElementById('sEmail').value.trim().toLowerCase(),
+        phone: document.getElementById('sPhone').value.trim(),
+        address: document.getElementById('sAddr').value.trim(),
+        role: 'seller',
+        active: true,
+        loginAt: new Date().toISOString(),
+      });
+      toast('Akun seller dibuat. Selamat berjualan!', 'success');
+      setTimeout(() => (location.href = 'dashboard.html'), 700);
+    });
+  </script>
+</body>
+</html>

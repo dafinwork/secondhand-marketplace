@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detail Produk - SecondHand Marketplace</title>
+  <meta name="description" content="Detail barang bekas terverifikasi: foto, kondisi, spesifikasi, info seller, dan ulasan pembeli.">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body data-nav="products.html">
+  <div id="siteNav"></div>
+
+  <div class="container py-3 small text-muted" id="breadcrumbBar"></div>
+
+  <main id="detail" class="pb-5"></main>
+
+  <section class="py-5 bg-white border-top">
+    <div class="container">
+      <div class="section-header">
+        <h2>Produk Serupa</h2>
+        <p>Barang lain di kategori yang mungkin kamu sukai.</p>
+        <div class="section-divider"></div>
+      </div>
+      <div class="row g-3" id="relatedGrid"></div>
+    </div>
+  </section>
+
+  <div id="siteFooter"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    const slug = qs('p');
+    const product = slug ? getProductBySlug(slug) : null;
+    const detail = document.getElementById('detail');
+
+    if (!product) {
+      document.getElementById('breadcrumbBar').innerHTML = '<a href="index.html">Beranda</a> / <span>Produk tidak ditemukan</span>';
+      detail.innerHTML = `<div class="container"><div class="empty-state py-5">
+        <i class="bi bi-question-circle"></i>
+        <h5>Produk tidak ditemukan</h5>
+        <p>Produk yang kamu cari mungkin sudah dihapus atau tautannya salah.</p>
+        <a class="btn btn-primary-custom" href="products.html">Kembali ke Katalog</a></div></div>`;
+    } else {
+      const cat = getCategory(product.categoryId);
+      const seller = SELLERS[product.sellerId] || { name: 'Seller', address: '-', phone: '-' };
+      const cond = CONDITION_LABELS[product.condition];
+      const off = discount(product);
+      const rating = ratingOf(product.id);
+      const reviews = reviewsFor(product.id);
+      const related = allProducts().filter((p) => p.categoryId === product.categoryId && p.id !== product.id).slice(0, 4);
+      const gallery = [product.image, product.image, product.image];
+
+      document.title = product.name + ' - SecondHand Marketplace';
+      document.getElementById('breadcrumbBar').innerHTML =
+        `<a href="index.html">Beranda</a> / <a href="products.html">Produk</a> /
+         <a href="products.html?cat=${cat.slug}">${cat.name}</a> / <span class="text-dark">${esc(product.name)}</span>`;
+
+      detail.innerHTML = `<div class="container">
+        <div class="row g-4">
+          <div class="col-lg-6">
+            <div class="gallery-main">
+              <img id="mainImg" src="assets/img/products/${product.image}" alt="${esc(product.name)}">
+              <span class="condition-badge badge bg-${cond.badge} position-absolute top-0 start-0 m-3"><i class="bi ${cond.icon}"></i> ${cond.label}</span>
+              ${product.verification === 'approved' ? '<span class="badge bg-success position-absolute bottom-0 start-0 m-3"><i class="bi bi-patch-check-fill"></i> Terverifikasi Admin</span>' : '<span class="badge bg-warning position-absolute bottom-0 start-0 m-3"><i class="bi bi-hourglass-split"></i> Menunggu Verifikasi</span>'}
+            </div>
+            <div class="gallery-thumbs" id="thumbs">
+              ${gallery.map((g, i) => `<button class="${i === 0 ? 'active' : ''}" data-src="assets/img/products/${g}" aria-label="Foto ${i + 1}"><img src="assets/img/products/${g}" alt="Foto ${i + 1} produk" loading="lazy"></button>`).join('')}
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <span class="chip mb-2"><i class="bi ${cat.icon}"></i> ${cat.name}</span>
+            <h1 class="fw-bold text-dark" style="letter-spacing:-0.5px">${esc(product.name)}</h1>
+            <div class="d-flex flex-wrap align-items-center gap-3 small text-muted mb-3">
+              <span>${stars(rating)} <strong>${rating ? rating.toFixed(1) : 'Belum ada ulasan'}</strong> (${product.reviewCount} ulasan)</span>
+              <span><i class="bi bi-eye"></i> ${product.views} dilihat</span>
+              <span><i class="bi bi-clock"></i> Diupload ${fmtDate(product.createdAt)}</span>
+            </div>
+
+            <div class="d-flex align-items-baseline gap-3 mb-1">
+              <div class="price-display">${fmt(product.price)}</div>
+              ${product.originalPrice > product.price ? `<div><div class="price-strike">${fmt(product.originalPrice)}</div>
+                <span class="badge bg-danger">Hemat ${off}%</span></div>` : ''}
+            </div>
+            <div class="text-muted small mb-3"><i class="bi bi-box-seam"></i> Stok tersisa ${product.stock} unit</div>
+
+            <div class="d-flex gap-2 align-items-center mb-3">
+              <div class="qty-control">
+                <button id="qtyMinus" aria-label="Kurangi">−</button>
+                <span id="qtyVal">1</span>
+                <button id="qtyPlus" aria-label="Tambah">+</button>
+              </div>
+              <button class="btn btn-primary-custom flex-grow-1" id="addBtn"><i class="bi bi-cart-plus"></i> Tambah ke Keranjang</button>
+              <button class="btn btn-outline-secondary" id="wishBtn" title="Wishlist" aria-label="Tambah ke wishlist" style="color:var(--gray-500)">
+                <i class="bi bi-heart${inWishlist(product.id) ? '-fill text-danger' : ''}"></i>
+              </button>
+            </div>
+            <a href="cart.html" class="btn btn-link text-decoration-none px-0 mb-3"><i class="bi bi-bag"></i> Lihat keranjang saya</a>
+
+            <hr>
+            <h6 class="fw-bold text-dark mb-2">Informasi Barang</h6>
+            <ul class="meta-list">
+              <li><span>Kondisi</span><span class="text-capitalize">${cond.label}</span></li>
+              <li><span>Kategori</span><span>${cat.name}</span></li>
+              <li><span>Berat</span><span>${product.weight.toLocaleString('id-ID')} gram</span></li>
+              <li><span>Terakhir diperbarui</span><span>${fmtDate(product.createdAt)}</span></li>
+              <li><span>Status Verifikasi</span><span class="${product.verification === 'approved' ? 'text-success' : 'text-warning'}">${product.verification === 'approved' ? 'Disetujui' : 'Menunggu'}</span></li>
+            </ul>
+
+            <h6 class="fw-bold text-dark mt-4 mb-2">Deskripsi</h6>
+            <p class="text-muted" style="line-height:1.8">${esc(product.description)}</p>
+
+            <div class="stat-card mt-3">
+              <div class="d-flex align-items-center gap-3">
+                <div class="avatar-circle avatar-lg">${esc(seller.name.charAt(0))}</div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-dark">${esc(seller.name)}</div>
+                  <div class="small text-muted"><i class="bi bi-geo-alt"></i> ${esc(seller.address || '-')}</div>
+                  <div class="small text-muted"><i class="bi bi-telephone"></i> ${esc(seller.phone || '-')}</div>
+                </div>
+                <div class="text-center">
+                  <div class="fw-bold text-primary">${(seller.rating || 4.8).toFixed(1)}</div>
+                  <div class="small text-muted">${seller.sold || 0} terjual</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <section class="mt-5">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <h2 class="fw-bold text-dark mb-0">Ulasan Pembeli</h2>
+            <span class="badge bg-light text-dark border">${reviews.length}</span>
+          </div>
+          <div class="row g-4">
+            <div class="col-lg-4">
+              <div class="summary-card">
+                <div class="text-center">
+                  <div class="display-4 fw-bold text-dark">${rating ? rating.toFixed(1) : '-'}</div>
+                  ${stars(rating, 'lg')}
+                  <div class="small text-muted mt-1">${reviews.length} ulasan</div>
+                </div>
+                <hr>
+                <p class="small text-muted mb-3">Ulasan hanya bisa ditulis pembeli yang pesanannya sudah selesai.</p>
+                <a href="review.html?p=${product.slug}" class="btn btn-primary-custom w-100">Tulis Ulasan</a>
+              </div>
+            </div>
+            <div class="col-lg-8">
+              <div id="reviewList"></div>
+            </div>
+          </div>
+        </section>
+      </div>`;
+
+      document.getElementById('reviewList').innerHTML = reviews.length
+        ? reviews.map((r) => {
+            const u = USERS[r.userId] || { name: 'Pembeli' };
+            return `<div class="stat-card mb-3">
+              <div class="d-flex gap-3">
+                <div class="avatar-circle">${esc(u.name.charAt(0))}</div>
+                <div class="flex-grow-1">
+                  <div class="fw-semibold text-dark">${esc(u.name)}</div>
+                  <div class="small text-muted mb-1">${stars(r.rating)} <span class="ms-2">${esc(r.createdAt || '')}</span></div>
+                  <p class="mb-0 text-muted">${esc(r.comment)}</p>
+                </div>
+              </div></div>`;
+          }).join('')
+        : `<div class="empty-state border rounded-3 bg-white">
+            <i class="bi bi-chat-square-text"></i>
+            <h5>Belum ada ulasan</h5>
+            <p>Jadilah yang pertama memberikan ulasan untuk produk ini.</p>
+            <a href="review.html?p=${product.slug}" class="btn btn-primary-custom">Tulis Ulasan Pertama</a>
+          </div>`;
+
+      let qty = 1;
+      const qtyVal = document.getElementById('qtyVal');
+      const setQty = (v) => {
+        qty = Math.min(Math.max(1, v), Math.max(1, product.stock));
+        qtyVal.textContent = qty;
+      };
+      document.getElementById('qtyMinus').addEventListener('click', () => setQty(qty - 1));
+      document.getElementById('qtyPlus').addEventListener('click', () => setQty(qty + 1));
+      document.getElementById('addBtn').addEventListener('click', () => addToCart(product.id, qty));
+      document.getElementById('wishBtn').addEventListener('click', () => {
+        const on = toggleWishlist(product.id);
+        document.getElementById('wishBtn').innerHTML = `<i class="bi bi-heart${on ? '-fill text-danger' : ''}"></i>`;
+      });
+
+      document.getElementById('thumbs').addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        document.querySelectorAll('#thumbs button').forEach((x) => x.classList.remove('active'));
+        b.classList.add('active');
+        document.getElementById('mainImg').src = b.dataset.src;
+      });
+
+      renderProducts(document.getElementById('relatedGrid'), related);
+    }
+  </script>
+</body>
+</html>

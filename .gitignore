@@ -15,3 +15,11 @@ Desktop.ini
 # Temporary files
 *.tmp
 *.log
+
+# Node (local test tooling only; CI installs jsdom on the runner)
+node_modules/
+package-lock.json
+
+# OS / editor cruft
+.DS_Store
+*.swp

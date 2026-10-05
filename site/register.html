@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daftar Akun - SecondHand Marketplace</title>
+  <meta name="robots" content="noindex">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body data-nav="">
+  <div id="siteNav"></div>
+
+  <main class="auth-wrapper">
+    <div class="auth-card" style="max-width:540px">
+      <div class="text-center mb-4">
+        <a class="navbar-brand fs-3 d-inline-block" href="index.html"><i class="bi bi-recycle"></i> Second<span>Hand</span></a>
+        <p class="text-muted small mb-0">Buat akun gratis, tanpa biaya transaksi</p>
+      </div>
+
+      <form id="regForm">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold" for="name">Nama Lengkap / Nama Toko</label>
+          <input class="form-control" id="name" required placeholder="mis. Budi Santoso">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold" for="email">Email</label>
+          <input type="email" class="form-control" id="email" required placeholder="nama@email.com">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold" for="phone">Nomor Telepon</label>
+          <input class="form-control" id="phone" required placeholder="08xxxxxxxxxx">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold" for="address">Alamat</label>
+          <textarea class="form-control" id="address" rows="2" placeholder="Alamat lengkap untuk pengiriman"></textarea>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-6">
+            <label class="form-label small fw-semibold" for="password">Password</label>
+            <input type="password" class="form-control" id="password" required minlength="6">
+          </div>
+          <div class="col-6">
+            <label class="form-label small fw-semibold" for="password2">Ulangi Password</label>
+            <input type="password" class="form-control" id="password2" required minlength="6">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold d-block">Daftar sebagai</label>
+          <div class="d-flex gap-2" id="rolePick"></div>
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="tos" required>
+          <label class="form-check-label small" for="tos">Saya setuju dengan Syarat &amp; Kebijakan Privasi SecondHand.</label>
+        </div>
+        <button class="btn btn-primary-custom w-100" type="submit"><i class="bi bi-person-plus"></i> Buat Akun</button>
+      </form>
+
+      <p class="text-center small text-muted mt-4 mb-0">
+        Sudah punya akun? <a href="login.html" class="text-decoration-none fw-semibold">Masuk di sini</a>
+      </p>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    let role = 'buyer';
+    const roles = [
+      { id: 'buyer', label: 'Pembeli', icon: 'bi-bag', desc: 'Saya ingin membeli barang' },
+      { id: 'seller', label: 'Seller', icon: 'bi-shop', desc: 'Saya ingin menjual barang' },
+    ];
+    document.getElementById('rolePick').innerHTML = roles.map((r, i) => `
+      <button type="button" class="btn ${i === 0 ? 'btn-primary' : 'btn-outline-primary'} btn-sm flex-fill" data-role="${r.id}">
+        <i class="bi ${r.icon}"></i> ${r.label}</button>`).join('');
+    document.getElementById('rolePick').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-role]');
+      if (!b) return;
+      role = b.dataset.role;
+      document.querySelectorAll('#rolePick button').forEach((x) => {
+        x.classList.toggle('btn-primary', x.dataset.role === role);
+        x.classList.toggle('btn-outline-primary', x.dataset.role !== role);
+      });
+    });
+
+    document.getElementById('regForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const pw = document.getElementById('password').value;
+      if (pw !== document.getElementById('password2').value) {
+        toast('Konfirmasi password tidak sama', 'danger');
+        return;
+      }
+      const user = {
+        id: Date.now(),
+        name: document.getElementById('name').value.trim(),
+        email: document.getElementById('email').value.trim().toLowerCase(),
+        phone: document.getElementById('phone').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        role,
+        active: true,
+        loginAt: new Date().toISOString(),
+      };
+      save(KEY.user, user);
+      toast('Akun berhasil dibuat. Selamat datang!', 'success');
+      setTimeout(() => (location.href = 'dashboard.html'), 700);
+    });
+  </script>
+</body>
+</html>
