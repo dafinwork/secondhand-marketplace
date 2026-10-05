@@ -10,8 +10,10 @@ Repository ini berisi dua bentuk dari aplikasi yang sama:
 | **Versi statis** | [`site/`](site/) | HTML/CSS/JS murni, dikirim ke **GitHub Pages**. Semua interaksi berjalan di browser tanpa server. |
 | **Versi PHP + MySQL** | [`index.php`](index.php), [`src/`](src/), [`database/`](database/) | Aplikasi penuh dengan session, PDO, dan 10 tabel MySQL. Dibutuhkan PHP 8+ dan MySQL/MariaDB. |
 
-Demo statis berguna untuk seeshow seluruh alur produk (katalog → keranjang → checkout →
+Demo statis berguna untuk showcase seluruh alur produk (katalog → keranjang → checkout →
 pembayaran → lacak → dashboard) tanpa harus menyiapkan server.
+
+**Live demo:** <https://dafinwork.github.io/secondhand-marketplace/>
 
 ---
 
@@ -164,7 +166,7 @@ Setelah repository GitHub baru dibuat, isi domain Pages pada `site/sitemap.xml` 
 `site/robots.txt`:
 
 ```bash
-node tools/update-base-url.js https://<user>.github.io/<repo>
+node tools/update-base-url.js https://dafinwork.github.io/secondhand-marketplace
 ```
 
 Skrip itu idempoten: jalankan ulang kapan pun domain Pages berubah.
@@ -175,15 +177,21 @@ Skrip itu idempoten: jalankan ulang kapan pun domain Pages berubah.
 
 ### GitHub Pages (versi statis)
 
-Workflow `.github/workflows/pages.yml` otomatis menjalankan saat ada push ke `main` yang
-menyentuh `site/`. Yang perlu disiapkan sekali pada repository:
+Situs sudah aktif di <https://dafinwork.github.io/secondhand-marketplace/> dari repository
+[`dafinwork/secondhand-marketplace`](https://github.com/dafinwork/secondhand-marketplace).
 
-1. **Settings → Pages → Build and deployment → Source: GitHub Actions**
-2. Tunggu workflow hijau; URL situs muncul di output langkah *Deploy to GitHub Pages*.
+Workflow `.github/workflows/pages.yml` otomatis berjalan saat ada push ke `main` yang menyentuh
+`site/`. Setup yang sudah diterapkan pada repository:
 
-Alamat situs berbentuk `https://<user>.github.io/<repo>/`.
+- Pages **Build and deployment → Source: GitHub Actions** (`build_type: workflow`)
+- Deploy memakai environment `github-pages`, URL diambil dari output langkah *Deploy to GitHub Pages*
 
-Sekali setelah repository dibuat, jalankan `node tools/update-base-url.js https://<user>.github.io/<repo>`
+Sekali setelah repository baru dibuat, jalankan
+
+```bash
+node tools/update-base-url.js https://<user>.github.io/<repo>
+```
+
 agar `site/sitemap.xml`, `site/robots.txt`, dan tag canonical di `site/index.html` memakai domain asli.
 
 > Tiap kali `site/` berubah, cukup `git push`. Workflow membuat artifact dari folder `site/`
